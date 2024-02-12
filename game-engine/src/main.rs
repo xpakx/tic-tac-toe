@@ -187,4 +187,37 @@ mod tests {
         let board = BitBoard{x,o};
         assert_eq!(is_move_legal(&board, &mv), false);
     }
+
+    #[test]
+    fn test_check_win_horizontal() {
+        let board_x_horizontal = BitBoard { x: 0b111000000, o: 0b000000000 };
+        assert_eq!(check_win(&board_x_horizontal), Some(Symbol::X));
+
+        let board_o_horizontal = BitBoard { x: 0b000000000, o: 0b111000000 };
+        assert_eq!(check_win(&board_o_horizontal), Some(Symbol::O));
+    }
+
+    #[test]
+    fn test_check_win_vertical() {
+        let board_x_vertical = BitBoard { x: 0b100100100, o: 0b010010000 };
+        assert_eq!(check_win(&board_x_vertical), Some(Symbol::X));
+
+        let board_o_vertical = BitBoard { x: 0b000010000, o: 0b001001001 };
+        assert_eq!(check_win(&board_o_vertical), Some(Symbol::O));
+    }
+
+    #[test]
+    fn test_check_win_diagonal() {
+        let board_x_diagonal1 = BitBoard { x: 0b100010001, o: 0b000001010 };
+        assert_eq!(check_win(&board_x_diagonal1), Some(Symbol::X));
+
+        let board_o_diagonal2 = BitBoard { x: 0b000100010, o: 0b001010100 };
+        assert_eq!(check_win(&board_o_diagonal2), Some(Symbol::O));
+    }
+
+    #[test]
+    fn test_check_win_no_win() {
+        let board_no_win = BitBoard { x: 0b000010000, o: 0b001001000 };
+        assert_eq!(check_win(&board_no_win), None);
+    }
 }
