@@ -25,10 +25,11 @@ fn main() {
 
 
     println!("{}", is_move_legal(&bit, &mv));
+    println!("{:?}", check_win(&bit));
     
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 enum Symbol {
     X,
     O
@@ -85,8 +86,6 @@ impl Move {
             _ => panic!("Invalid row")
         };
         let position = row_offset + (self.column-1);
-        println!("{}", row_offset);
-        println!("{}", position);
         bitboard = bitboard << position;
         bitboard += 1;
         bitboard = bitboard << 9-position-1;
@@ -96,6 +95,30 @@ impl Move {
 
 fn is_move_legal(board: &BitBoard, mv: &i32) -> bool {
     return mv & board.x == 0 && mv & board.o == 0
+}
+
+fn check_win(board: &BitBoard) -> Option<Symbol> {
+    if check_win_single_mask(&board.x) {
+        return Some(Symbol::X);
+    }
+    if check_win_single_mask(&board.o) {
+        return Some(Symbol::O);
+    }
+    return None
+}
+
+fn check_win_single_mask(board: &i32) -> bool {
+    let row1 = 0b000000111;
+    let row2 = row1 << 3;
+    let row3 = row2 << 3;
+    let diag1 = 0b100010001;
+    let diag2 = 0b001010100;
+    let column1 = 0b001001001;
+    let column2 = column1 << 1;
+    let column3 = column2 << 1;
+    return board & row3 == row3 || board & row2 == row2 && board & row1 == row1 
+        || board & diag1 == diag1 || board & diag2 == diag2
+        || board & column1 == column1 || board & column2 == column2 || board & column3 == column3  
 }
 
 #[cfg(test)]
