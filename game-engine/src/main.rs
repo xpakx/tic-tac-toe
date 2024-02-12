@@ -89,3 +89,44 @@ impl Move {
         return Ok(bitboard);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_move_to_bitboard_1_1() {
+        let mv = Move { row: 1, column: 1 };
+        assert_eq!(mv.to_bitboard(), Ok(0b100000000));
+    }
+
+    #[test]
+    fn test_move_to_bitboard_2_1() {
+        let mv = Move { row: 2, column: 1 };
+        assert_eq!(mv.to_bitboard(), Ok(0b000100000));
+    }
+
+    #[test]
+    fn test_move_to_bitboard_3_1() {
+        let mv = Move { row: 3, column: 1 };
+        assert_eq!(mv.to_bitboard(), Ok(0b000000100));
+    }
+
+    #[test]
+    fn test_move_to_bitboard_1_2() {
+        let mv = Move { row: 1, column: 2 };
+        assert_eq!(mv.to_bitboard(), Ok(0b010000000));
+    }
+
+    #[test]
+    fn test_move_to_bitboard_3_3() {
+        let mv = Move { row: 3, column: 3 };
+        assert_eq!(mv.to_bitboard(), Ok(0b000000001));
+    }
+
+    #[test]
+    fn test_to_bitboard_outside_of_board() {
+        let mv = Move { row: 0, column: 1 };
+        assert_eq!(mv.to_bitboard(), Err("Outside of board"));
+    }
+}
