@@ -20,7 +20,11 @@ fn main() {
     println!("{:09b}", bit.o);
 
     let mv = Move{row: 1, column: 2};
-    println!("{:09b}", mv.to_bitboard().unwrap());
+    let mv = mv.to_bitboard().unwrap();
+    println!("{:09b}", mv);
+
+
+    println!("{}", is_move_legal(&bit, &mv));
     
 }
 
@@ -88,6 +92,10 @@ impl Move {
         bitboard = bitboard << 9-position-1;
         return Ok(bitboard);
     }
+}
+
+fn is_move_legal(board: &BitBoard, mv: &i32) -> bool {
+    return mv & board.x == 0 && mv & board.o == 0
 }
 
 #[cfg(test)]
