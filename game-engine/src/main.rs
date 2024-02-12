@@ -137,4 +137,31 @@ mod tests {
         let mv = Move { row: 0, column: 1 };
         assert_eq!(mv.to_bitboard(), Err("Outside of board"));
     }
+
+    #[test]
+    fn test_legal_move_legality() {
+        let mv = 0b010000000;
+        let x =  0b000010000;
+        let o =  0b100000000;
+        let board = BitBoard{x,o};
+        assert_eq!(is_move_legal(&board, &mv), true);
+    }
+
+    #[test]
+    fn test_illegal_move_legality_x_collision() {
+        let mv = 0b000010000;
+        let x =  0b000010000;
+        let o =  0b100000000;
+        let board = BitBoard{x,o};
+        assert_eq!(is_move_legal(&board, &mv), false);
+    }
+
+    #[test]
+    fn test_illegal_move_legality_o_collision() {
+        let mv = 0b100000000;
+        let x =  0b000010000;
+        let o =  0b100000000;
+        let board = BitBoard{x,o};
+        assert_eq!(is_move_legal(&board, &mv), false);
+    }
 }
