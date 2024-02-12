@@ -224,4 +224,22 @@ mod tests {
         let board_no_win = BitBoard { x: 0b000010000, o: 0b001001000 };
         assert_eq!(check_win(&board_no_win), None);
     }
+
+    #[test]
+    fn test_check_draw_empty_board() {
+        let board_empty = BitBoard { x: 0b000000000, o: 0b000000000 };
+        assert!(!check_draw(&board_empty));
+    }
+
+    #[test]
+    fn test_check_draw_partial_board() {
+        let board_partial = BitBoard { x: 0b101001000, o: 0b000100010 };
+        assert!(!check_draw(&board_partial));
+    }
+
+    #[test]
+    fn test_check_draw_full_board() {
+        let board_full = BitBoard { x: 0b111111111, o: 0b000000000 };
+        assert!(check_draw(&board_full));
+    }
 }
