@@ -121,6 +121,10 @@ fn check_win_single_mask(board: &i32) -> bool {
         || board & column1 == column1 || board & column2 == column2 || board & column3 == column3  
 }
 
+fn check_draw(board: &BitBoard) -> bool {
+    return (board.x | board.o) == 0b111111111
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
