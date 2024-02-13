@@ -1,4 +1,5 @@
 mod board;
+mod minmax;
 use board::*;
 
 fn main() {
