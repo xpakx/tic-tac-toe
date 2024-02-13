@@ -85,7 +85,7 @@ fn check_win_single_mask(board: &i32) -> bool {
     let column1 = 0b001001001;
     let column2 = column1 << 1;
     let column3 = column2 << 1;
-    return board & row3 == row3 || board & row2 == row2 && board & row1 == row1 
+    return board & row3 == row3 || board & row2 == row2 || board & row1 == row1 
         || board & diag1 == diag1 || board & diag2 == diag2
         || board & column1 == column1 || board & column2 == column2 || board & column3 == column3  
 }
