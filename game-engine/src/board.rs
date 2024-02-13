@@ -220,4 +220,32 @@ mod tests {
         let board_full = BitBoard { x: 0b111111111, o: 0b000000000 };
         assert!(check_draw(&board_full));
     }
+
+    #[test]
+    fn test_apply_move_player_x() {
+        let initial_board = BitBoard { x: 0b000000000, o: 0b000000000 };
+        let mv = 0b000000100;
+        let updated_board = initial_board.apply_move(&mv, Symbol::X);
+        assert_eq!(updated_board.x, 0b000000100);
+        assert_eq!(updated_board.o, 0b000_000_000);
+    }
+
+    #[test]
+    fn test_apply_move_player_o() {
+        let initial_board = BitBoard { x: 0b000000000, o: 0b000000000 };
+        let mv = 0b000001000;
+        let updated_board = initial_board.apply_move(&mv, Symbol::O);
+        assert_eq!(updated_board.x, 0b000000000);
+        assert_eq!(updated_board.o, 0b000001000);
+    }
+
+    #[test]
+    fn test_apply_move_multiple_moves() {
+        let mut board = BitBoard { x: 0b000000000, o: 0b000000000 };
+        let mv = 0b000000100;
+        let mv2 = 0b000100000;
+        board = board.apply_move(&mv, Symbol::X).apply_move(&mv2, Symbol::O);
+        assert_eq!(board.x, 0b000000100);
+        assert_eq!(board.o, 0b000100000);
+    }
 }
