@@ -106,4 +106,34 @@ mod tests {
         let moves_bitmask = generate_moves(&board_full);
         assert_eq!(moves_bitmask, 0b000000000);
     }
+
+    #[test]
+    fn test_min_max_decision_win_in_1_1() {
+        let board = BitBoard { x: 0b000101000, o: 0b110000001 };
+        // ╭───┬───┬───╮
+        // │ o │ o │   │
+        // ├───┼───┼───┤
+        // │ x │   │ x │
+        // ├───┼───┼───┤
+        // │   │   │ o │
+        // ╰───┴───┴───╯
+        let player = Symbol::X;
+        let best_move = min_max_decision(&board, &player);
+        assert_eq!(best_move, 0b000010000);
+    }
+
+    #[test]
+    fn test_min_max_decision_win_in_1_2() {
+        let board = BitBoard { x: 0b010100110, o: 0b001001000 };
+        // ╭───┬───┬───╮
+        // │   │ x │ o │
+        // ├───┼───┼───┤
+        // │ x │   │ o │
+        // ├───┼───┼───┤
+        // │ x │ x │   │
+        // ╰───┴───┴───╯
+        let player = Symbol::O;
+        let best_move = min_max_decision(&board, &player);
+        assert_eq!(best_move, 0b000000001);
+    }
 }
