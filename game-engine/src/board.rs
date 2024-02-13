@@ -177,6 +177,9 @@ mod tests {
 
         let board_o_horizontal = BitBoard { x: 0b000000000, o: 0b111000000 };
         assert_eq!(check_win(&board_o_horizontal), Some(Symbol::O));
+
+        let board_x_horizontal = BitBoard { x: 0b000111000, o: 0b000000000 };
+        assert_eq!(check_win(&board_x_horizontal), Some(Symbol::X));
     }
 
     #[test]
