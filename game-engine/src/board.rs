@@ -94,6 +94,15 @@ pub fn check_draw(board: &BitBoard) -> bool {
     return (board.x | board.o) == 0b111111111
 }
 
+impl BitBoard {
+    pub fn apply_move(&self, mv: &i32, player: Symbol) -> BitBoard {
+        return match player {
+            Symbol::X => BitBoard {x: self.x | mv, o: self.o.clone()},
+            Symbol::O => BitBoard {x: self.x.clone(), o: self.o | mv},
+        } 
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
