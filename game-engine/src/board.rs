@@ -1,3 +1,5 @@
+use core::panic;
+
 #[derive(PartialEq, Eq, Debug)]
 pub enum Symbol {
     X,
@@ -101,6 +103,35 @@ impl BitBoard {
             Symbol::O => BitBoard {x: self.x.clone(), o: self.o | mv},
         } 
     }
+
+    pub fn print(&self) {
+        let mut mask = 0b111000000;
+        println!("╭───┬───┬───╮");
+        for i in 0..3 {
+            let bits_x = (self.x & mask) >> (2-i)*3;
+            let bits_o = (self.o & mask) >> (2-i)*3;
+            let sym1 = get_symbol(bits_x, bits_o, 1);
+            let sym2 = get_symbol(bits_x, bits_o, 2);
+            let sym3 = get_symbol(bits_x, bits_o, 3);
+
+            println!("│ {} │ {} │ {} │", sym1, sym2, sym3);
+            if i != 2 {
+                println!("├───┼───┼───┤");
+            } 
+            mask = mask >> 3;
+        }
+        println!("╰───┴───┴───╯");
+    }
+}
+
+fn get_symbol(bits_x: i32, bits_o: i32, bit: i32) -> &'static str {
+    let mask = 0b100 >> bit-1;
+    return match (bits_x & mask, bits_o & mask) {
+        (x, 0) if x > 0 => "x",
+        (0, x) if x > 0 => "o",
+        (0, 0) => " ",
+        _ => panic!("Not possible")
+    };
 }
 
 #[cfg(test)]
