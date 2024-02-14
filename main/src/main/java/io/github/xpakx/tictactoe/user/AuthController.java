@@ -16,6 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService service;
 
+    @PostMapping("/authenticate")
+    public ResponseEntity<AuthenticationResponse> authenticate(
+            @Valid @RequestBody AuthenticationRequest authenticationRequest) {
+        return ResponseEntity.ok(
+                service.generateAuthenticationToken(authenticationRequest)
+        );
+    }
+
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(
             @Valid @RequestBody RegistrationRequest registrationRequest) {

@@ -63,4 +63,18 @@ public class AuthService {
             throw new ValidationException("Username exists!");
         }
     }
+
+    public AuthenticationResponse generateAuthenticationToken(AuthenticationRequest authenticationRequest) {
+        final UserDetails userDetails = userService.loadUserByUsername(authenticationRequest.getUsername());
+        authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
+        final String token = jwtUtils.generateToken(userDetails);
+        return AuthenticationResponse.builder()
+                .token(token)
+                .username(authenticationRequest.getUsername())
+                .moderator_role(
+                        userDetails.getAuthorities().stream()
+                                .anyMatch((a) -> a.getAuthority().equals("MODERATOR"))
+                )
+                .build();
+    }
 }
