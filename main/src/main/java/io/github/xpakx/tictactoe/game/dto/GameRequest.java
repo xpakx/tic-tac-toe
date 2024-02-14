@@ -2,13 +2,9 @@ package io.github.xpakx.tictactoe.game.dto;
 
 import io.github.xpakx.tictactoe.game.GameType;
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.validator.constraints.Length;
-
-import java.util.Objects;
 
 @Getter
 @Setter

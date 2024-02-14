@@ -44,4 +44,9 @@ public class Game {
     @JoinColumn(name = "opponent_id")
     @JsonIgnore
     private User opponent;
+
+    @Column(name = "current_symbol")
+    private GameSymbol currentSymbol;
+    @Column(name = "user_starts")
+    private boolean userStarts;
 }

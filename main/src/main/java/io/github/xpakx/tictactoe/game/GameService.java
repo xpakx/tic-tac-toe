@@ -25,6 +25,8 @@ public class GameService {
         newGame.setCurrentState("?????????");
         newGame.setType(GameType.USER);
         newGame.setOpponent(userRepository.getReferenceById(opponentId));
+        newGame.setCurrentSymbol(GameSymbol.X);
+        newGame.setUserStarts(true); // TODO
         return gameRepository.save(newGame);
     }
 
@@ -34,6 +36,8 @@ public class GameService {
         newGame.setCurrentState("?????????");
         newGame.setType(GameType.AI);
         newGame.setAccepted(true);
+        newGame.setCurrentSymbol(GameSymbol.X);
+        newGame.setUserStarts(true); // TODO
         return gameRepository.save(newGame);
     }
 
