@@ -1,5 +1,7 @@
 package io.github.xpakx.tictactoe.settings;
 
+import io.github.xpakx.tictactoe.security.JwtAuthenticationEntryPoint;
+import io.github.xpakx.tictactoe.security.JwtRequestFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,6 +26,8 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final JwtRequestFilter jwtRequestFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder getPasswordEncoder() {
@@ -44,14 +49,19 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(
                         (auth) -> auth
-                                .requestMatchers(HttpMethod.POST).permitAll()
-                                .requestMatchers(HttpMethod.GET).permitAll()
+                                .requestMatchers(HttpMethod.POST, "/authenticate").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/register").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(
                         (session) -> session
                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                );
+                )
+                .exceptionHandling(
+                        (exceptionHandling) -> exceptionHandling
+                                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                )
+                .addFilterAfter(jwtRequestFilter, ExceptionTranslationFilter.class);
         return http.build();
     }
     @Bean
