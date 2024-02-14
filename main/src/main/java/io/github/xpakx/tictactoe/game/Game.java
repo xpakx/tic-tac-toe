@@ -20,18 +20,20 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private boolean accepted;
-    private String current_state;
+    @Column(name = "current_state")
+    private String currentState;
     private GameType type;
 
     private boolean finished;
     private boolean won;
     private boolean lost;
     private boolean drawn;
-    @Column(columnDefinition = "TIME")
-    private LocalDateTime started_at;
-    @Column(columnDefinition = "TIME")
-    private LocalDateTime last_move_at;
-    private String last_move;
+    @Column(name = "started_at", columnDefinition = "TIME")
+    private LocalDateTime startedAt;
+    @Column(name = "last_move_at", columnDefinition = "TIME")
+    private LocalDateTime lastMoveAt;
+    @Column(name = "last_move")
+    private String lastMove;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
