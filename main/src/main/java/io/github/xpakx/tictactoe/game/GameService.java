@@ -5,6 +5,8 @@ import io.github.xpakx.tictactoe.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Random;
+
 @Service
 @RequiredArgsConstructor
 public class GameService {
@@ -26,7 +28,8 @@ public class GameService {
         newGame.setType(GameType.USER);
         newGame.setOpponent(userRepository.getReferenceById(opponentId));
         newGame.setCurrentSymbol(GameSymbol.X);
-        newGame.setUserStarts(true); // TODO
+        Random random = new Random();
+        newGame.setUserStarts(random.nextBoolean());
         return gameRepository.save(newGame);
     }
 
@@ -37,7 +40,8 @@ public class GameService {
         newGame.setType(GameType.AI);
         newGame.setAccepted(true);
         newGame.setCurrentSymbol(GameSymbol.X);
-        newGame.setUserStarts(true); // TODO
+        Random random = new Random();
+        newGame.setUserStarts(random.nextBoolean());
         return gameRepository.save(newGame);
     }
 
