@@ -26,9 +26,9 @@ public class User {
     @JoinTable(name = "user_roles",
             joinColumns = {
                     @JoinColumn(name = "user_id", referencedColumnName = "id",
-                            nullable = false, updatable = false)},
+                            nullable = false)},
             inverseJoinColumns = {
                     @JoinColumn(name = "user_role_id", referencedColumnName = "id",
-                            nullable = false, updatable = false)})
+                            nullable = false)})
     private Set<UserRole> roles;
 }
