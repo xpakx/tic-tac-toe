@@ -1,6 +1,10 @@
 package io.github.xpakx.tictactoe.game;
 
+import io.github.xpakx.tictactoe.game.dto.AcceptRequest;
 import io.github.xpakx.tictactoe.game.dto.GameRequest;
+import io.github.xpakx.tictactoe.game.error.GameNotFoundException;
+import io.github.xpakx.tictactoe.game.error.RequestProcessedException;
+import io.github.xpakx.tictactoe.game.error.UnauthorizedGameRequestChangeException;
 import io.github.xpakx.tictactoe.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -68,5 +72,25 @@ public class GameService {
                         .orElseThrow()
                         .getId()
         );
+    }
+
+    public boolean acceptRequest(String username, Long requestId, AcceptRequest decision) {
+        var game = gameRepository.findById(requestId)
+                .orElseThrow(GameNotFoundException::new);
+        if (game.isAccepted() || game.isRejected()) {
+            throw new RequestProcessedException(
+                    "Request already " + (game.isAccepted() ? "accepted!" : "rejected!")
+            );
+        }
+        if (!game.getOpponent().getUsername().equals(username)) {
+            throw new UnauthorizedGameRequestChangeException();
+        }
+        if (decision.isAccepted()) {
+            game.setAccepted(true);
+        } else {
+            game.setRejected(true);
+        }
+        gameRepository.save(game);
+        return decision.isAccepted();
     }
 }
