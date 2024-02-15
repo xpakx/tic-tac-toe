@@ -1,0 +1,23 @@
+server:
+  port: 8000
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: main
+          uri: http://localhost:8080
+          predicates:
+            - Path=/authenticate,/register,/game/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4400"
+            allowedHeaders: "*"
+            allowedMethods:
+              - "GET"
+              - "POST"
+              - "PUT"
+              - "OPTIONS"
+logging:
+  level:
+    org.springframework.cloud.gateway.handler.predicate: trace
