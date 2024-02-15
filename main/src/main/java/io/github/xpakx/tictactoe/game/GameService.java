@@ -61,4 +61,12 @@ public class GameService {
                         .getId()
         );
     }
+
+    public List<Game> getOldGames(String username) {
+        return gameRepository.findFinishedGames(
+                userRepository.findByUsername(username)
+                        .orElseThrow()
+                        .getId()
+        );
+    }
 }

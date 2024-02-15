@@ -37,4 +37,11 @@ public class GameController {
                 service.getActiveGames(principal.getName())
         );
     }
+
+    @GetMapping("/game/archive")
+    public ResponseEntity<List<Game>> getOldGames(Principal principal) {
+        return ResponseEntity.ok(
+                service.getOldGames(principal.getName())
+        );
+    }
 }

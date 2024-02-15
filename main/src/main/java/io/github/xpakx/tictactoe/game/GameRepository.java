@@ -13,4 +13,9 @@ public interface GameRepository extends JpaRepository<Game, Long> {
             "(g.user.id = ?1 or g.opponent.id = ?1) " +
             "and g.accepted = true and g.finished = false")
     List<Game> findActiveGames(Long id);
+
+    @Query("select g from Game g where " +
+            "(g.user.id = ?1 or g.opponent.id = ?1) " +
+            "and g.accepted = true and g.finished = true")
+    List<Game> findFinishedGames(Long id);
 }
