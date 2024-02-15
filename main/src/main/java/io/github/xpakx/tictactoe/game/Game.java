@@ -20,6 +20,7 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private boolean accepted;
+    private boolean rejected;
     @Column(name = "current_state")
     private String currentState;
     private GameType type;
