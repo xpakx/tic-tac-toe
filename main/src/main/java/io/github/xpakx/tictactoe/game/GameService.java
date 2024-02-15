@@ -5,6 +5,7 @@ import io.github.xpakx.tictactoe.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -45,4 +46,11 @@ public class GameService {
         return gameRepository.save(newGame);
     }
 
+    public List<Game> getRequests(String username) {
+        return gameRepository.findRequests(
+                userRepository.findByUsername(username)
+                        .orElseThrow()
+                        .getId()
+        );
+    }
 }
