@@ -30,4 +30,11 @@ public class GameController {
                 service.getRequests(principal.getName())
         );
     }
+
+    @GetMapping("/game")
+    public ResponseEntity<List<Game>> getGames(Principal principal) {
+        return ResponseEntity.ok(
+                service.getActiveGames(principal.getName())
+        );
+    }
 }

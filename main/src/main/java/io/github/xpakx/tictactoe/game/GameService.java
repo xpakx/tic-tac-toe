@@ -53,4 +53,12 @@ public class GameService {
                         .getId()
         );
     }
+
+    public List<Game> getActiveGames(String username) {
+        return gameRepository.findActiveGames(
+                userRepository.findByUsername(username)
+                        .orElseThrow()
+                        .getId()
+        );
+    }
 }

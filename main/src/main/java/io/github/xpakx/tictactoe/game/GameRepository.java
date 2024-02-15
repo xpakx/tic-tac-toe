@@ -8,4 +8,9 @@ import java.util.List;
 public interface GameRepository extends JpaRepository<Game, Long> {
     @Query("select g from Game g where g.opponent.id = ?1 and g.accepted = false and g.rejected = false")
     List<Game> findRequests(Long id);
+
+    @Query("select g from Game g where " +
+            "(g.user.id = ?1 or g.opponent.id = ?1) " +
+            "and g.accepted = true and g.finished = false")
+    List<Game> findActiveGames(Long id);
 }
