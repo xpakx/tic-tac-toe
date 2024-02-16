@@ -66,6 +66,8 @@ public class GameService {
         game.nextPlayer();
         game.setBlocked(false);
         simpMessagingTemplate.convertAndSend("/topic/game/" + game.getId(), msg);
-        // TODO: send next MoveEvent if AI turn
+        if (game.aiTurn()) {
+           movePublisher.sendMove(null, game.getCurrentState(), game.getId(), true);
+        }
     }
 }

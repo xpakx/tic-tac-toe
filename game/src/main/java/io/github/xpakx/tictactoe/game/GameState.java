@@ -52,5 +52,9 @@ public class GameState {
         }
         return username2;
     }
+
+    public boolean aiTurn() {
+        return user2AI && isSecondUserTurn();
+    }
 }
 

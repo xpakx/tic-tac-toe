@@ -20,8 +20,10 @@ public class MovePublisher {
         MoveEvent event = new MoveEvent();
         event.setGameState(gameState);
         event.setGameId(gameId);
-        event.setRow(message.getX());
-        event.setColumn(message.getY());
+        if (message != null) {
+            event.setRow(message.getX());
+            event.setColumn(message.getY());
+        }
         event.setAi(ai);
         template.convertAndSend(movesTopic, "move", event);
     }
