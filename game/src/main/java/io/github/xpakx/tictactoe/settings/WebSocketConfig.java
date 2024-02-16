@@ -1,5 +1,8 @@
 package io.github.xpakx.tictactoe.settings;
 
+import io.github.xpakx.tictactoe.security.JwtUtils;
+import io.jsonwebtoken.Claims;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -20,7 +23,9 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    private final JwtUtils jwt;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -36,6 +41,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
+
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
@@ -52,7 +58,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         {
                             if (head.getKey().equals("Token")) {
                                 final String token = head.getValue().get(0);
-                                accessor.setUser(() -> token); // TODO: use JWT
+                                if(jwt.isInvalid(token)) {
+                                    break;
+                                }
+                                Claims claims = jwt.getAllClaimsFromToken(token);
+                                if(claims != null && claims.getSubject() != null) {
+                                    accessor.setUser(claims::getSubject);
+                                }
                                 break;
                             }
                         }

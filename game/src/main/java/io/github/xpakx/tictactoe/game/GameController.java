@@ -13,6 +13,7 @@ public class GameController {
     @MessageMapping("/move/{id}")
     @SendTo("/topic/game/{id}")
     public MoveMessage greeting(@DestinationVariable Long id, MoveRequest move, Principal principal) {
+        // TODO: validate move before sending
         return new MoveMessage(
                 principal.getName(),
                 move.getX(),
