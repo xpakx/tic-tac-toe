@@ -14,9 +14,12 @@ public class GameService {
 
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
         var game = getGameById(gameId);
+        if (game == null) {
+            return MoveMessage.rejected(move.getX(), move.getY(), username, "Game not loaded, please wait!");
+        }
 
         if (game.isBlocked() || !canPlayerMove(game, move, username)) {
-            return MoveMessage.rejected(move.getX(), move.getY(), username);
+            return MoveMessage.rejected(move.getX(), move.getY(), username, "Cannot move now!");
         }
         game.setBlocked(true);
         var msg = MoveMessage.accepted(move.getX(), move.getY(), username);
@@ -48,7 +51,12 @@ public class GameService {
             game.setBlocked(false);
             simpMessagingTemplate.convertAndSend(
                     "/topic/game/" + game.getId(),
-                    MoveMessage.rejected(event.getRow(), event.getColumn(), game.getCurrentPlayer())
+                    MoveMessage.rejected(
+                            event.getRow(),
+                            event.getColumn(),
+                            game.getCurrentPlayer(),
+                            "Move is illegal!"
+                    )
             );
             return;
         }
