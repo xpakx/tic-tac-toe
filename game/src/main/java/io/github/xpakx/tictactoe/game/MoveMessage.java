@@ -13,4 +13,5 @@ public class MoveMessage {
     private String player;
     private int x;
     private int y;
+    private boolean legal;
 }
