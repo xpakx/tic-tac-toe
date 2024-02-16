@@ -16,6 +16,7 @@ public class GameService {
             );
         }
 
+
         return new MoveMessage(
                 username,
                 move.getX(),
