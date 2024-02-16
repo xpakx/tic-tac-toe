@@ -14,4 +14,17 @@ public class MoveMessage {
     private int x;
     private int y;
     private boolean legal;
+    private boolean applied;
+
+    public static MoveMessage of(int x, int y, String username) {
+        return new MoveMessage(username, x, y, true, true);
+    }
+
+    public static MoveMessage rejected(int x, int y, String username) {
+        return new MoveMessage(username, x, y, false, false);
+    }
+
+    public static MoveMessage accepted(int x, int y, String username) {
+        return new MoveMessage(username, x, y, true, false);
+    }
 }

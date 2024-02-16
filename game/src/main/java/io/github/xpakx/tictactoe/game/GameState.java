@@ -45,5 +45,12 @@ public class GameState {
             currentSymbol = GameSymbol.X;
         }
     }
+
+    public String getCurrentPlayer() {
+        if (isFirstUserTurn()) {
+            return username1;
+        }
+        return username2;
+    }
 }
 

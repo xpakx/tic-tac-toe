@@ -3,31 +3,23 @@ package io.github.xpakx.tictactoe.game;
 import io.github.xpakx.tictactoe.clients.MovePublisher;
 import io.github.xpakx.tictactoe.game.dto.EngineEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
     private final MovePublisher movePublisher;
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
         var game = getGameById(gameId);
 
         if (game.isBlocked() || !canPlayerMove(game, move, username)) {
-            return new MoveMessage(
-                    username,
-                    move.getX(),
-                    move.getY(),
-                    false
-            );
+            return MoveMessage.rejected(move.getX(), move.getY(), username);
         }
         game.setBlocked(true);
-        var msg = new MoveMessage(
-                username,
-                move.getX(),
-                move.getY(),
-                true
-        );
+        var msg = MoveMessage.accepted(move.getX(), move.getY(), username);
 
         movePublisher.sendMove(
                 msg,
@@ -54,7 +46,10 @@ public class GameService {
         var game = getGameById(event.getGameId());
         if (!event.isLegal()) {
             game.setBlocked(false);
-            // TODO msg to socket
+            simpMessagingTemplate.convertAndSend(
+                    "/topic/game/" + game.getId(),
+                    MoveMessage.rejected(event.getRow(), event.getColumn(), game.getCurrentPlayer())
+            );
             return;
         }
         game.setCurrentState(event.getNewState());
@@ -67,7 +62,10 @@ public class GameService {
                 game.setLost(true);
             }
         }
+        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer());
         game.nextPlayer();
-        // TODO message
+        game.setBlocked(false);
+        simpMessagingTemplate.convertAndSend("/topic/game/" + game.getId(), msg);
+        // TODO: send next MoveEvent if AI turn
     }
 }
