@@ -8,6 +8,10 @@ spring:
           uri: http://localhost:8080
           predicates:
             - Path=/authenticate,/register,/game/**
+        - id: game
+          uri: http://localhost:8081
+          predicates:
+            - Path=/app/**,/topic/**,/play/**
       globalcors:
         cors-configurations:
           '[/**]':
