@@ -3,9 +3,12 @@ package io.github.xpakx.tictactoe.game;
 import io.github.xpakx.tictactoe.clients.GamePublisher;
 import io.github.xpakx.tictactoe.clients.MovePublisher;
 import io.github.xpakx.tictactoe.game.dto.EngineEvent;
+import io.github.xpakx.tictactoe.game.dto.GameMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +20,7 @@ public class GameService {
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
         var game = getGameById(gameId);
         if (game == null) {
-            gamePublisher.getGame(gameId);
+            gamePublisher.getGame(gameId); // ???
             return MoveMessage.rejected(move.getX(), move.getY(), username, "Game not loaded, please wait!");
         }
 
@@ -80,5 +83,23 @@ public class GameService {
         if (game.aiTurn()) {
            movePublisher.sendMove(null, game.getCurrentState(), game.getId(), true);
         }
+    }
+
+    public GameMessage subscribe(Long gameId) {
+        var game = getGameById(gameId);
+        if (game == null) {
+            // add dummy game to repo?
+            gamePublisher.getGame(gameId);
+            var msg = new GameMessage();
+            msg.setError(Optional.of("Loading game, please wait…"));
+            return msg;
+        }
+        var msg = new GameMessage();
+        msg.setError(Optional.empty());
+        msg.setAi(game.isUser2AI());
+        msg.setUsername1(game.getUsername1());
+        msg.setUsername2(game.getUsername2());
+        msg.setState(game.getCurrentState());
+        return msg;
     }
 }
