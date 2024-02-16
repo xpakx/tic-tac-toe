@@ -17,9 +17,24 @@ public class GameState {
 
     private String username1;
     private String username2;
-    private boolean user2IsAI;
+    private boolean user2AI;
 
     private GameSymbol currentSymbol;
     private boolean firstUserStarts;
+
+    public boolean isFirstUserTurn() {
+        return (firstUserStarts && currentSymbol == GameSymbol.X) ||
+                (!firstUserStarts && currentSymbol == GameSymbol.O);
+    }
+
+    public boolean isSecondUserTurn() {
+        return (!firstUserStarts && currentSymbol == GameSymbol.X) ||
+                (firstUserStarts && currentSymbol == GameSymbol.O);
+    }
+
+    public boolean isUserInGame(String username) {
+        return username.equals(username1) ||
+                (!user2AI && username.equals(username2));
+    }
 }
 
