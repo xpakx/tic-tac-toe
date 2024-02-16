@@ -37,5 +37,13 @@ public class GameState {
         return username.equals(username1) ||
                 (!user2AI && username.equals(username2));
     }
+
+    public void nextPlayer() {
+        if (currentSymbol == GameSymbol.X) {
+            currentSymbol = GameSymbol.O;
+        } else {
+            currentSymbol = GameSymbol.X;
+        }
+    }
 }
 
