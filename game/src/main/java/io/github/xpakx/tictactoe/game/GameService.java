@@ -1,5 +1,6 @@
 package io.github.xpakx.tictactoe.game;
 
+import io.github.xpakx.tictactoe.clients.GamePublisher;
 import io.github.xpakx.tictactoe.clients.MovePublisher;
 import io.github.xpakx.tictactoe.game.dto.EngineEvent;
 import lombok.RequiredArgsConstructor;
@@ -10,11 +11,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GameService {
     private final MovePublisher movePublisher;
+    private final GamePublisher gamePublisher;
     private final SimpMessagingTemplate simpMessagingTemplate;
 
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
         var game = getGameById(gameId);
         if (game == null) {
+            gamePublisher.getGame(gameId);
             return MoveMessage.rejected(move.getX(), move.getY(), username, "Game not loaded, please wait!");
         }
 
