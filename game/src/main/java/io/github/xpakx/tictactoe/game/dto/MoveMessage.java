@@ -1,4 +1,4 @@
-package io.github.xpakx.tictactoe.game;
+package io.github.xpakx.tictactoe.game.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,7 +1,7 @@
 package io.github.xpakx.tictactoe.clients;
 
 import io.github.xpakx.tictactoe.clients.event.MoveEvent;
-import io.github.xpakx.tictactoe.game.MoveMessage;
+import io.github.xpakx.tictactoe.game.dto.MoveMessage;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

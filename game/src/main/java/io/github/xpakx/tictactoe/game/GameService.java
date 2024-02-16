@@ -4,6 +4,8 @@ import io.github.xpakx.tictactoe.clients.GamePublisher;
 import io.github.xpakx.tictactoe.clients.MovePublisher;
 import io.github.xpakx.tictactoe.game.dto.EngineEvent;
 import io.github.xpakx.tictactoe.game.dto.GameMessage;
+import io.github.xpakx.tictactoe.game.dto.MoveMessage;
+import io.github.xpakx.tictactoe.game.dto.MoveRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;

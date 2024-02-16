@@ -1,6 +1,8 @@
 package io.github.xpakx.tictactoe.game;
 
 import io.github.xpakx.tictactoe.game.dto.GameMessage;
+import io.github.xpakx.tictactoe.game.dto.MoveMessage;
+import io.github.xpakx.tictactoe.game.dto.MoveRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
