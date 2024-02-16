@@ -1,13 +1,18 @@
 package io.github.xpakx.tictactoe.game;
 
+import io.github.xpakx.tictactoe.clients.MovePublisher;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class GameService {
+    private final MovePublisher movePublisher;
+
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
         var game = getGameById(gameId);
 
-        if (!canPlayerMove(game, move, username)) {
+        if (game.isBlocked() || !canPlayerMove(game, move, username)) {
             return new MoveMessage(
                     username,
                     move.getX(),
@@ -15,14 +20,22 @@ public class GameService {
                     false
             );
         }
-
-
-        return new MoveMessage(
+        game.setBlocked(true);
+        var msg = new MoveMessage(
                 username,
                 move.getX(),
                 move.getY(),
                 true
         );
+
+        movePublisher.sendMove(
+                msg,
+                game.getCurrentState(),
+                game.getId(),
+                false
+        );
+
+        return msg;
     }
 
     // TODO

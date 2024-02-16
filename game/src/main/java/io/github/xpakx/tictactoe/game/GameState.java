@@ -21,6 +21,7 @@ public class GameState {
 
     private GameSymbol currentSymbol;
     private boolean firstUserStarts;
+    private boolean blocked;
 
     public boolean isFirstUserTurn() {
         return (firstUserStarts && currentSymbol == GameSymbol.X) ||
