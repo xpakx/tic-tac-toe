@@ -2,10 +2,7 @@ package io.github.xpakx.tictactoe.game;
 
 import io.github.xpakx.tictactoe.clients.GamePublisher;
 import io.github.xpakx.tictactoe.clients.MovePublisher;
-import io.github.xpakx.tictactoe.game.dto.EngineEvent;
-import io.github.xpakx.tictactoe.game.dto.GameMessage;
-import io.github.xpakx.tictactoe.game.dto.MoveMessage;
-import io.github.xpakx.tictactoe.game.dto.MoveRequest;
+import io.github.xpakx.tictactoe.game.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -103,5 +100,15 @@ public class GameService {
         msg.setUsername2(game.getUsername2());
         msg.setState(game.getCurrentState());
         return msg;
+    }
+
+    // TODO
+    public void loadGame(StateEvent event) {
+        if (event.isError()) {
+            // send error to websocket
+            return;
+        }
+        // add game to repo
+        // send board to websocket
     }
 }

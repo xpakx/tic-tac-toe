@@ -78,4 +78,22 @@ public class AMQPConfig {
             final MessageHandlerMethodFactory messageHandlerMethodFactory) {
         return (c) -> c.setMessageHandlerMethodFactory(messageHandlerMethodFactory);
     }
+
+
+    @Bean
+    public TopicExchange stateTopicExchange(@Value("${amqp.exchange.state}") final String exchangeName) {
+        return ExchangeBuilder.topicExchange(exchangeName).durable(true).build();
+    }
+
+    @Bean
+    public Queue stateQueue(@Value("${amqp.queue.state}") final String queueName) {
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
+    public Binding stateBinding(final Queue stateQueue, final TopicExchange stateTopicExchange) {
+        return BindingBuilder.bind(stateQueue)
+                .to(stateTopicExchange)
+                .with("state");
+    }
 }
