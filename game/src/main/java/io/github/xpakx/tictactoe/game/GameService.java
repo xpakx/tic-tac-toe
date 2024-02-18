@@ -15,13 +15,15 @@ public class GameService {
     private final MovePublisher movePublisher;
     private final GamePublisher gamePublisher;
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final GameRepository repository;
 
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
-        var game = getGameById(gameId);
-        if (game == null) {
+        var gameOpt = getGameById(gameId);
+        if (gameOpt.isEmpty()) {
             gamePublisher.getGame(gameId); // ???
             return MoveMessage.rejected(move.getX(), move.getY(), username, "Game not loaded, please wait!");
         }
+        var game = gameOpt.get();
 
         if (game.isBlocked() || !canPlayerMove(game, move, username)) {
             return MoveMessage.rejected(move.getX(), move.getY(), username, "Cannot move now!");
@@ -39,9 +41,8 @@ public class GameService {
         return msg;
     }
 
-    // TODO
-    public GameState getGameById(Long id) {
-        return new GameState();
+    public Optional<GameState> getGameById(Long id) {
+        return repository.findById(id);
     }
 
     private boolean canPlayerMove(GameState game, MoveRequest move, String username) {
@@ -51,7 +52,7 @@ public class GameService {
     }
 
     public void doMakeMove(EngineEvent event) {
-        var game = getGameById(event.getGameId());
+        var game = getGameById(event.getGameId()).orElseThrow();
         if (!event.isLegal()) {
             game.setBlocked(false);
             simpMessagingTemplate.convertAndSend(
@@ -85,14 +86,15 @@ public class GameService {
     }
 
     public GameMessage subscribe(Long gameId) {
-        var game = getGameById(gameId);
-        if (game == null) {
+        var gameOpt = getGameById(gameId);
+        if (gameOpt.isEmpty()) {
             // add dummy game to repo?
             gamePublisher.getGame(gameId);
             var msg = new GameMessage();
             msg.setError(Optional.of("Loading game, please wait…"));
             return msg;
         }
+        var game = gameOpt.get();
         var msg = new GameMessage();
         msg.setError(Optional.empty());
         msg.setAi(game.isUser2AI());

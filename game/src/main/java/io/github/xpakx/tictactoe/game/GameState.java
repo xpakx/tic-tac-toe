@@ -2,10 +2,14 @@ package io.github.xpakx.tictactoe.game;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.redis.core.RedisHash;
+
+import java.io.Serializable;
 
 @Getter
 @Setter
-public class GameState {
+@RedisHash
+public class GameState implements Serializable {
     private Long id;
     private String currentState;
     private String lastMove;
