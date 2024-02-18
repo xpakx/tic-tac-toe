@@ -13,6 +13,7 @@ public class GameMessage {
     private boolean ai;
 
     private String state;
+    private String lastMove;
 
     private Optional<String> error;
 

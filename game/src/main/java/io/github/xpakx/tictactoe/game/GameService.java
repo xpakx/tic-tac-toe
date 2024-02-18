@@ -95,21 +95,28 @@ public class GameService {
             return msg;
         }
         var game = gameOpt.get();
+        return createGameMessage(game);
+    }
+
+    private GameMessage createGameMessage(GameState game) {
         var msg = new GameMessage();
         msg.setError(Optional.empty());
         msg.setAi(game.isUser2AI());
         msg.setUsername1(game.getUsername1());
         msg.setUsername2(game.getUsername2());
         msg.setState(game.getCurrentState());
+        msg.setLastMove(game.getLastMove());
         return msg;
     }
 
-    // TODO
     public void loadGame(StateEvent event) {
         if (event.isError()) {
-            // TODO send error to websocket
+            var msg = new GameMessage();
+            msg.setError(Optional.of(event.getErrorMessage()));
+            simpMessagingTemplate.convertAndSend("/topic/board/" + event.getId(), msg);
             return;
         }
+
         var game = new GameState();
         game.setId(event.getId());
         game.setCurrentState(event.getCurrentState());
@@ -120,7 +127,7 @@ public class GameService {
         game.setCurrentSymbol(event.getCurrentSymbol());
         game.setFirstUserStarts(event.isFirstUserStarts());
         repository.save(game);
-
-        // TODO send board to websocket
+        var msg = createGameMessage(game);
+        simpMessagingTemplate.convertAndSend("/topic/board/" + game.getId(), msg);
     }
 }
