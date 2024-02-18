@@ -107,10 +107,20 @@ public class GameService {
     // TODO
     public void loadGame(StateEvent event) {
         if (event.isError()) {
-            // send error to websocket
+            // TODO send error to websocket
             return;
         }
-        // add game to repo
-        // send board to websocket
+        var game = new GameState();
+        game.setId(event.getId());
+        game.setCurrentState(event.getCurrentState());
+        game.setLastMove(event.getLastMove());
+        game.setUsername1(event.getUsername1());
+        game.setUsername2(event.getUsername2());
+        game.setUser2AI(event.isUser2AI());
+        game.setCurrentSymbol(event.getCurrentSymbol());
+        game.setFirstUserStarts(event.isFirstUserStarts());
+        repository.save(game);
+
+        // TODO send board to websocket
     }
 }
