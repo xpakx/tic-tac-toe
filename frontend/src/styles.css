@@ -2,10 +2,12 @@
 body, html {
     margin: 0;
     padding: 0;
+    background-color: #eff1f5;
+    color: #4c4f69;
 }
 
 button, a.btn, input[type=submit] {
-    box-shadow: 0 5px 0 0 rgba(255, 111, 97, 0.4);
+    box-shadow: 0 5px 0 0 rgba(221, 120, 120, 0.4);
     border-radius: 5px;
     cursor: pointer;
     display: flex;
@@ -15,12 +17,14 @@ button, a.btn, input[type=submit] {
     font-size: 15px;
     font-weight: 600;
     padding: 5px;
-    background-color: #ff6f61;
+    background-color: #dc8a78;
     min-width: 100px;
+    color: #4c4f69;
 }
 
 button:hover, a.btn:hover, input[type=submit]:hover {
-    background-color: #ff594f;
+    background-color: #fe640b;
+    color: #6c6f85;
 }
 
 button:focus, a.btn:focus, input[type=submit]:focus {
@@ -29,5 +33,5 @@ button:focus, a.btn:focus, input[type=submit]:focus {
 
 button:active, a.btn:active, input[type=submit]:active {
     transform: translateY(3px);
-    box-shadow: 0 2px 0 0 rgba(255, 111, 97, 0.4);
+    box-shadow: 0 2px 0 0 rgba(221, 120, 120, 0.4);
 }
