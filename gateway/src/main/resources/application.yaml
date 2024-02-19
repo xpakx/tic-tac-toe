@@ -12,10 +12,12 @@ spring:
           uri: http://localhost:8081
           predicates:
             - Path=/app/**,/topic/**,/play/**
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_UNIQUE
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:4400"
+            allowedOrigins: "http://localhost:4200"
             allowedHeaders: "*"
             allowedMethods:
               - "GET"
