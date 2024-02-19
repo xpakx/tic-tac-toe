@@ -46,6 +46,8 @@ export class ModalLoginComponent implements OnInit {
 
   onLogin(response: AuthResponse) {
     this.error = false;
+    localStorage.setItem('token', response.token.toString());
+    localStorage.setItem('username', response.username.toString());
   }
 
   onError(err: HttpErrorResponse) {

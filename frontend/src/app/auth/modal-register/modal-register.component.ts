@@ -48,6 +48,8 @@ export class ModalRegisterComponent implements OnInit {
 
   onRegister(response: AuthResponse) {
     this.error = false;
+    localStorage.setItem('token', response.token.toString());
+    localStorage.setItem('username', response.username.toString());
   }
 
   onError(err: HttpErrorResponse) {
