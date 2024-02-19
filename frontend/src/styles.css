@@ -3,3 +3,31 @@ body, html {
     margin: 0;
     padding: 0;
 }
+
+button, a.btn, input[type=submit] {
+    box-shadow: 0 5px 0 0 rgba(255, 111, 97, 0.4);
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 5px;
+    background-color: #ff6f61;
+    min-width: 100px;
+}
+
+button:hover, a.btn:hover, input[type=submit]:hover {
+    background-color: #ff594f;
+}
+
+button:focus, a.btn:focus, input[type=submit]:focus {
+    outline: none;
+}
+
+button:active, a.btn:active, input[type=submit]:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 0 rgba(255, 111, 97, 0.4);
+}
