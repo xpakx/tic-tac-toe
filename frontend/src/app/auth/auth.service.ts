@@ -4,12 +4,13 @@ import { RegisterRequest } from './dto/register-request';
 import { Observable } from 'rxjs';
 import { AuthResponse } from './dto/auth-response';
 import { AuthRequest } from './dto/auth-request';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl: String = "http://localhost:8000"
+  private apiUrl: String = environment.apiUrl;
 
   constructor(protected http: HttpClient) { }
 
