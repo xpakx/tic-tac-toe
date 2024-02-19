@@ -1,7 +1,7 @@
 <div class="modal-overlay">
     <div class="modal">
-        <app-modal-register *ngIf="!logged && registerCard"></app-modal-register>
-        <app-modal-login *ngIf="!logged && !registerCard"></app-modal-login>
+        <app-modal-register *ngIf="!logged && registerCard" (card)="changeRegisterCard($event)"></app-modal-register>
+        <app-modal-login *ngIf="!logged && !registerCard" (card)="changeRegisterCard($event)"></app-modal-login>
     </div>
 </div>
 

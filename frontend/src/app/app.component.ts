@@ -12,4 +12,8 @@ export class AppComponent {
   get logged(): boolean {
     return localStorage.getItem("username") != null;
   }
+
+  changeRegisterCard(value: boolean) {
+    this.registerCard = value;
+  }
 }

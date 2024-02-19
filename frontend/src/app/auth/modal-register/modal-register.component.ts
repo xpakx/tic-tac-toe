@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, NgForm } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { RegisterRequest } from '../dto/register-request';
@@ -15,6 +15,8 @@ export class ModalRegisterComponent implements OnInit {
 
   error: boolean = false;
   errorMsg: String = "";
+
+  @Output() card: EventEmitter<boolean> = new EventEmitter<boolean>();
 
   constructor(private formBuilder: FormBuilder, private authService: AuthService) {
     this.registerForm = this.formBuilder.group({
@@ -56,5 +58,9 @@ export class ModalRegisterComponent implements OnInit {
     console.log(err);
     this.error = true;
     this.errorMsg = err.message;
+  }
+
+  goToLogin() {
+    this.card.emit(false);
   }
 }

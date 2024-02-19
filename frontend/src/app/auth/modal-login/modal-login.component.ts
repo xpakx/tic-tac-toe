@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { AuthRequest } from '../dto/auth-request';
@@ -15,6 +15,8 @@ export class ModalLoginComponent implements OnInit {
 
   error: boolean = false;
   errorMsg: String = "";
+
+  @Output() card: EventEmitter<boolean> = new EventEmitter<boolean>();
 
   constructor(private formBuilder: FormBuilder, private authService: AuthService) {
     this.loginForm = this.formBuilder.group({
@@ -57,6 +59,6 @@ export class ModalLoginComponent implements OnInit {
   }
 
   goToRegistration() {
-    console.log("Open registration modal");
+    this.card.emit(true);
   }
 }
