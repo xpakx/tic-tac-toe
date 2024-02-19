@@ -1,2 +1,10 @@
-hello
-<app-modal-register></app-modal-register>
+<div class="modal-overlay">
+    <div class="modal">
+        <app-modal-register *ngIf="!logged && registerCard"></app-modal-register>
+        <app-modal-login *ngIf="!logged && !registerCard"></app-modal-login>
+    </div>
+</div>
+
+<div class="app">
+
+</div>
