@@ -1,3 +1,4 @@
+<h2>Register</h2>
 <div class="error" *ngIf="error">{{errorMsg}}</div>
 
 <form [formGroup]="registerForm" (ngSubmit)="register()">
@@ -7,3 +8,4 @@
 
   <input type = "submit" value = "Register">
 </form> 
+<div class="footer">Already registered? Please <a (click)="{}">log in</a>.</div>

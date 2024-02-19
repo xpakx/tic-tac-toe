@@ -8,7 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
   selector: 'app-modal-register',
   templateUrl: './modal-register.component.html',
-  styleUrls: ['./modal-register.component.css']
+  styleUrls: ['../modal-login/modal-login.component.css']
 })
 export class ModalRegisterComponent implements OnInit {
   registerForm: FormGroup;

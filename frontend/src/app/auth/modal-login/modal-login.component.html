@@ -1,3 +1,4 @@
+<h2>Log in</h2>
 <div class="error" *ngIf="error">{{errorMsg}}</div>
 
 <form [formGroup]="loginForm" (ngSubmit)="login()">
@@ -6,3 +7,4 @@
 
   <input type = "submit" value = "Log in">
 </form> 
+<div class="footer">Don't have an account? Please <a (click)="{}">register</a>.</div>

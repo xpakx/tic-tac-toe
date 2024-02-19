@@ -55,4 +55,8 @@ export class ModalLoginComponent implements OnInit {
     this.error = true;
     this.errorMsg = err.message;
   }
+
+  goToRegistration() {
+    console.log("Open registration modal");
+  }
 }
