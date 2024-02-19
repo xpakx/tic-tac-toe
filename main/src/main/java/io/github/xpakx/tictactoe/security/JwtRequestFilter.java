@@ -101,6 +101,8 @@ public class JwtRequestFilter extends GenericFilterBean {
     }
 
     private boolean shouldNotFilter(HttpServletRequest request) {
-        return false;
+        String path = request.getRequestURI();
+        System.out.println(path);
+        return path.equals("/authenticate") || path.equals("/register");
     }
 }
