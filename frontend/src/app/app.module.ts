@@ -8,6 +8,7 @@ import { HttpClientModule } from  '@angular/common/http';
 import { ModalLoginComponent } from './auth/modal-login/modal-login.component';
 import { BoardComponent } from './board/board.component';
 import { MenuComponent } from './menu/menu.component';
+import { GameListComponent } from './game-list/game-list.component';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { MenuComponent } from './menu/menu.component';
     ModalRegisterComponent,
     ModalLoginComponent,
     BoardComponent,
-    MenuComponent
+    MenuComponent,
+    GameListComponent
   ],
   imports: [
     BrowserModule,
