@@ -11,10 +11,20 @@ export class GameListComponent implements OnInit {
   @Input() active: boolean = true;
   @Input() requests: boolean = false;
 
-
   constructor() { }
 
   ngOnInit(): void {
   }
 
+  accept(gameId: number) {
+
+  }
+
+  reject(gameId: number) {
+
+  }
+
+  open(gameId: number) {
+
+  }
 }
