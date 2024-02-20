@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @Getter
 @Setter
 public class GameRequest {
@@ -14,12 +16,12 @@ public class GameRequest {
     private String opponent;
 
     @AssertTrue(message = "User game request must have opponent username!")
-    private boolean isOpponentIdSetForNonAIType() {
-        return type != GameType.USER || opponent != null;
+    public boolean isOpponentIdSetForNonAIType() {
+        return type != GameType.USER || Objects.nonNull(opponent);
     }
 
     @AssertTrue(message = "AI game request should not have opponent username!")
-    private boolean isOpponentIdUnsetForNonUserType() {
-        return type == GameType.USER || opponent == null;
+    public boolean isOpponentIdUnsetForNonUserType() {
+        return type == GameType.USER || Objects.isNull(opponent);
     }
 }
