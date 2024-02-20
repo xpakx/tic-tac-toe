@@ -48,6 +48,6 @@ export class GameListComponent implements OnInit {
   }
 
   open(gameId: number) {
-
+    // todo
   }
 }

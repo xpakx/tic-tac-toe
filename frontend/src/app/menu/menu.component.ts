@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Game } from '../main/dto/game';
 import { GameManagementService } from '../main/game-management.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { GameResponse } from '../main/dto/game-response';
 
 @Component({
   selector: 'app-menu',
@@ -67,5 +68,21 @@ export class MenuComponent implements OnInit {
     console.log(err);
     this.error = true;
     this.errorMsg = err.message;
+  }
+  
+  newGame() {
+
+  }
+
+  newAIGame() {
+    this.gameService.newGame({type: "AI"})
+      .subscribe({
+        next: (game: GameResponse) => this.open(game.id),
+        error: (err: HttpErrorResponse) => this.onError(err)
+      });
+  }
+
+  open(gameId: number) {
+    // todo
   }
 }
