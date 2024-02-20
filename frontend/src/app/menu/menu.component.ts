@@ -89,7 +89,7 @@ export class MenuComponent implements OnInit {
 
   closeRequestModal(username: String) {
     this.openRequestModal = false;
-    this.gameService.newGame({type: "User", opponent: username}) // TODO
+    this.gameService.newGame({type: "USER", opponent: username}) // TODO
       .subscribe({
         next: (game: GameResponse) => this.onRequestSent(username),
         error: (err: HttpErrorResponse) => this.onError(err)
