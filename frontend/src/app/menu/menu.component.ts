@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { Game } from '../main/dto/game';
 import { GameManagementService } from '../main/game-management.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -16,6 +16,8 @@ export class MenuComponent implements OnInit {
   error: boolean = false;
   errorMsg: String = "";
   openRequestModal: boolean = false;
+
+  @Output() openGame: EventEmitter<number> = new EventEmitter<number>();
 
   constructor(private gameService: GameManagementService) { }
 
@@ -84,7 +86,7 @@ export class MenuComponent implements OnInit {
   }
 
   open(gameId: number) {
-    // todo
+    this.openGame.emit(gameId);
   }
 
   closeRequestModal(username: String) {

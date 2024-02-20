@@ -6,6 +6,6 @@
 <button (click)="getArchive()">History</button>
 <div class = "separator">❦</div>
 
-<app-game-list [games]="games" [active]="activeView" [requests]="requestView"></app-game-list>
+<app-game-list [games]="games" [active]="activeView" [requests]="requestView" (openGame)="open($event)"></app-game-list>
 
 <app-new-game-modal *ngIf="openRequestModal" (new)="closeRequestModal($event)"></app-new-game-modal>

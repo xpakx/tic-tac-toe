@@ -8,6 +8,7 @@ import { Component } from '@angular/core';
 export class AppComponent {
   title = 'Tic Tac Toe';
   registerCard = false;
+  gameId?: number;
 
   get logged(): boolean {
     return localStorage.getItem("username") != null;
@@ -15,5 +16,9 @@ export class AppComponent {
 
   changeRegisterCard(value: boolean) {
     this.registerCard = value;
+  }
+  
+  open(gameId: number) {
+    this.gameId = gameId;
   }
 }

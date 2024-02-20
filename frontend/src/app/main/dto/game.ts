@@ -10,7 +10,7 @@ export interface Game {
     lost: boolean;
     drawn: boolean;
 
-    username1: String; //todo
+    username1: String;
     username2: String; 
     userStarts: boolean;
     currentSymbol: String;

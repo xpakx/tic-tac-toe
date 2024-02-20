@@ -6,6 +6,6 @@
 </div>
 
 <div class="app">
-    <app-board></app-board>
-    <app-menu></app-menu>
+    <app-board [gameId]="gameId"></app-board>
+    <app-menu (openGame)="open($event)"></app-menu>
 </div>

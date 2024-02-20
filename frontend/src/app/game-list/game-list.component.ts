@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Game } from '../main/dto/game';
 import { GameManagementService } from '../main/game-management.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -12,6 +12,8 @@ export class GameListComponent implements OnInit {
   @Input() games: Game[] = [];
   @Input() active: boolean = true;
   @Input() requests: boolean = false;
+
+  @Output() openGame: EventEmitter<number> = new EventEmitter<number>();
 
   constructor(private gameService: GameManagementService) { }
 
@@ -48,6 +50,6 @@ export class GameListComponent implements OnInit {
   }
 
   open(gameId: number) {
-    // todo
+    this.openGame.emit(gameId);
   }
 }
