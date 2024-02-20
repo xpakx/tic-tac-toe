@@ -2,6 +2,8 @@ package io.github.xpakx.tictactoe.game;
 
 import io.github.xpakx.tictactoe.game.dto.AcceptRequest;
 import io.github.xpakx.tictactoe.game.dto.GameRequest;
+import io.github.xpakx.tictactoe.game.dto.GameSummary;
+import io.github.xpakx.tictactoe.game.dto.NewGameResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,35 +18,35 @@ public class GameController {
     private final GameService service;
 
     @PostMapping("/game")
-    public ResponseEntity<Game> newGame(@Valid @RequestBody GameRequest request, Principal principal) {
+    public ResponseEntity<NewGameResponse> newGame(@Valid @RequestBody GameRequest request, Principal principal) {
         return ResponseEntity.ok(
                 service.newGame(principal.getName(), request)
         );
     }
 
     @GetMapping("/game/request")
-    public ResponseEntity<List<Game>> getRequests(Principal principal) {
+    public ResponseEntity<List<GameSummary>> getRequests(Principal principal) {
         return ResponseEntity.ok(
                 service.getRequests(principal.getName())
         );
     }
 
     @GetMapping("/game")
-    public ResponseEntity<List<Game>> getGames(Principal principal) {
+    public ResponseEntity<List<GameSummary>> getGames(Principal principal) {
         return ResponseEntity.ok(
                 service.getActiveGames(principal.getName())
         );
     }
 
     @GetMapping("/game/archive")
-    public ResponseEntity<List<Game>> getOldGames(Principal principal) {
+    public ResponseEntity<List<GameSummary>> getOldGames(Principal principal) {
         return ResponseEntity.ok(
                 service.getOldGames(principal.getName())
         );
     }
 
     @PostMapping("/game/{gameId}/request")
-    public ResponseEntity<Boolean> newGame(@PathVariable Long gameId, @RequestBody AcceptRequest request, Principal principal) {
+    public ResponseEntity<Boolean> acceptRequest(@PathVariable Long gameId, @RequestBody AcceptRequest request, Principal principal) {
         return ResponseEntity.ok(
                 service.acceptRequest(principal.getName(), gameId, request)
         );

@@ -2,6 +2,8 @@ package io.github.xpakx.tictactoe.game;
 
 import io.github.xpakx.tictactoe.game.dto.AcceptRequest;
 import io.github.xpakx.tictactoe.game.dto.GameRequest;
+import io.github.xpakx.tictactoe.game.dto.GameSummary;
+import io.github.xpakx.tictactoe.game.dto.NewGameResponse;
 import io.github.xpakx.tictactoe.game.error.GameNotFoundException;
 import io.github.xpakx.tictactoe.game.error.RequestProcessedException;
 import io.github.xpakx.tictactoe.game.error.UnauthorizedGameRequestChangeException;
@@ -18,12 +20,14 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
 
-    public Game newGame(String username, GameRequest request) {
+    public NewGameResponse newGame(String username, GameRequest request) {
+        Game game;
         if (request.getType() == GameType.AI) {
-            return newGameAgainstAI(username);
+            game = newGameAgainstAI(username);
         } else {
-            return newGameAgainstUser(username, request.getOpponent());
+            game = newGameAgainstUser(username, request.getOpponent());
         }
+        return new NewGameResponse(game.getId());
     }
 
     private Game newGameAgainstUser(String username, String opponent) {
@@ -50,28 +54,31 @@ public class GameService {
         return gameRepository.save(newGame);
     }
 
-    public List<Game> getRequests(String username) {
+    public List<GameSummary> getRequests(String username) {
         return gameRepository.findRequests(
                 userRepository.findByUsername(username)
                         .orElseThrow()
                         .getId()
-        );
+                ).stream()
+                .map(GameSummary::of).toList();
     }
 
-    public List<Game> getActiveGames(String username) {
+    public List<GameSummary> getActiveGames(String username) {
         return gameRepository.findActiveGames(
                 userRepository.findByUsername(username)
                         .orElseThrow()
                         .getId()
-        );
+                ).stream()
+                .map(GameSummary::of).toList();
     }
 
-    public List<Game> getOldGames(String username) {
+    public List<GameSummary> getOldGames(String username) {
         return gameRepository.findFinishedGames(
                 userRepository.findByUsername(username)
                         .orElseThrow()
                         .getId()
-        );
+                ).stream()
+                .map(GameSummary::of).toList();
     }
 
     public boolean acceptRequest(String username, Long requestId, AcceptRequest decision) {
