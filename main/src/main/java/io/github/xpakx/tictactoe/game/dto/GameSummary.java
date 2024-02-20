@@ -34,10 +34,10 @@ public class GameSummary {
         summary.setWon(game.isWon());
         summary.setLost(game.isLost());
         summary.setDrawn(game.isDrawn());
-        summary.setUsername1(game.getUser().getUsername()); // TODO
+        summary.setUsername1(game.getUser().getUsername());
         summary.setUsername2(
                 game.getOpponent() != null ? game.getOpponent().getUsername() : "AI"
-        ); // TODO
+        );
         summary.setUserStarts(game.isUserStarts());
         summary.setCurrentSymbol(game.getCurrentSymbol());
         return summary;
