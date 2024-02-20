@@ -1,7 +1,8 @@
 export interface Game {
     id: number;
-    currentState: String; //todo
-    lastMove: String; //todo
+    currentState: String[][];
+    lastMoveRow: number;
+    lastMoveColumn: number;
     type: String;
     
     finished: boolean;
