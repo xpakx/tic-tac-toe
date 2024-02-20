@@ -7,7 +7,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum GameSymbol {
     X("x"),
-    O("o");
+    O("o"),
+    Empty("?");
 
     private final String symbol;
 }
