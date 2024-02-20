@@ -7,3 +7,5 @@
 <div class = "separator">❦</div>
 
 <app-game-list [games]="games", [active]="activeView", [requests]="requestView"></app-game-list>
+
+<app-new-game-modal *ngIf="openRequestModal"></app-new-game-modal>

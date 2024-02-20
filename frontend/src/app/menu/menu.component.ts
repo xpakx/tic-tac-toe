@@ -15,6 +15,7 @@ export class MenuComponent implements OnInit {
   activeView: boolean = false;
   error: boolean = false;
   errorMsg: String = "";
+  openRequestModal: boolean = false;
 
   constructor(private gameService: GameManagementService) { }
 
@@ -71,7 +72,7 @@ export class MenuComponent implements OnInit {
   }
   
   newGame() {
-
+    this.openRequestModal = true;
   }
 
   newAIGame() {
@@ -84,5 +85,20 @@ export class MenuComponent implements OnInit {
 
   open(gameId: number) {
     // todo
+  }
+
+  closeRequestModal(username: String) {
+    this.openRequestModal = false;
+    this.gameService.newGame({type: "User", opponentId: 1}) // TODO
+      .subscribe({
+        next: (game: GameResponse) => this.onRequestSent(username),
+        error: (err: HttpErrorResponse) => this.onError(err)
+      });
+
+  }
+
+  onRequestSent(username: String) {
+    // todo
+    console.log(`${username} invited to game`)
   }
 }
