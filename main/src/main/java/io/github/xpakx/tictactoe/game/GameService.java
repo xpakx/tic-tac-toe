@@ -22,16 +22,16 @@ public class GameService {
         if (request.getType() == GameType.AI) {
             return newGameAgainstAI(username);
         } else {
-            return newGameAgainstUser(username, request.getOpponentId());
+            return newGameAgainstUser(username, request.getOpponent());
         }
     }
 
-    private Game newGameAgainstUser(String username, Long opponentId) {
+    private Game newGameAgainstUser(String username, String opponent) {
         var newGame = new Game();
         newGame.setUser(userRepository.findByUsername(username).orElseThrow());
         newGame.setCurrentState("?????????");
         newGame.setType(GameType.USER);
-        newGame.setOpponent(userRepository.getReferenceById(opponentId));
+        newGame.setOpponent(userRepository.findByUsername(opponent).orElseThrow());
         newGame.setCurrentSymbol(GameSymbol.X);
         Random random = new Random();
         newGame.setUserStarts(random.nextBoolean());
