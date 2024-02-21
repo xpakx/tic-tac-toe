@@ -1,6 +1,11 @@
 <div id="board">
     <ng-container *ngFor="let row of board; index as i">
-        <div *ngFor="let cell of row; index as j" class="cell" id="cell{{i}}{{j}}" (click)="move(i, j)">
+        <div 
+        *ngFor="let cell of row; index as j" 
+        class="cell" 
+        [class.illegal] = "error[i][j] == 'illegal'"
+        id="cell{{i}}{{j}}" 
+        (click)="move(i, j)">
             {{cell | field}}
         </div>
     </ng-container>

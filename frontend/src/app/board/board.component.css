@@ -30,3 +30,7 @@
 .cell:hover {
     background-color: #9ca0b0;
 }
+
+.cell.illegal {
+    background-color: #dd7878;
+}

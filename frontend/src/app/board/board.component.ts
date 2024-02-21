@@ -16,6 +16,11 @@ export class BoardComponent implements OnInit {
     ["", "O", ""],
     ["", "Empty", ""]
   ];
+  error: String[][] = [
+    ["", "", ""],
+    ["", "", ""],
+    ["", "", ""]
+  ];
   private moveSub?: Subscription;
   private boardSub?: Subscription;
 
@@ -60,9 +65,12 @@ export class BoardComponent implements OnInit {
   }
 
   makeMove(move: MoveMessage) {
+    this.error = [["", "", ""], ["", "", ""], ["", "", ""]];
     if (!move.applied) {
+      if (!move.legal) {
+        this.error[move.x][move.y] = "illegal";
+      }
       return;
-      // todo
     }
     this.board[move.x][move.y] = move.currentSymbol;
 
