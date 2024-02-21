@@ -1,6 +1,8 @@
 use lapin::{Connection, ConnectionProperties, options::{BasicConsumeOptions, BasicAckOptions, QueueBindOptions, QueueDeclareOptions}, types::FieldTable, message::DeliveryResult};
 use serde::{Serialize, Deserialize};
 
+use crate::{board::{Board, Symbol, Move, is_move_legal, check_win, check_draw}, minmax::min_max_decision};
+
 const REQUEST_QUEUE: &str = "tictactoe.moves.queue";
 const EXCHANGE_NAME: &str = "tictactoe.moves.topic";
 
@@ -74,7 +76,50 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                     }
                 };
 
-                println!("Received message: {:?}", game_msg);
+                println!("Received message: {:?}", &game_msg);
+                let board = Board::from_string(&game_msg.game_state);
+                let Some(board) = board else  {
+                    return;
+                };
+                let bitboard = board.to_bitboard();
+
+                println!("Before move:");
+                bitboard.print();
+
+                let symbol = match game_msg.current_symbol.as_str() {
+                    "x" | "X" => Symbol::X,
+                    _ => Symbol::O
+                };
+
+                let (mv, _legal) = match game_msg.ai {
+                    true => (min_max_decision(&bitboard, &symbol), true),
+                    false => {
+                        let Some(row) = game_msg.row else {
+                            return;
+                        };
+                        let Some(column) = game_msg.column else {
+                            return;
+                        };
+                        let mv = Move {row, column};
+                        let mv = mv.to_bitboard();
+                        let Ok(mv) = mv else {
+                            return;
+                        };
+                        let legal = is_move_legal(&bitboard, &mv);
+                        (mv, legal)
+                    }
+                };
+                let bitboard = bitboard.apply_move(&mv, &symbol);
+                let win = check_win(&bitboard);
+                let draw = check_draw(&bitboard);
+
+                println!("After move:");
+                bitboard.print();
+                if let Some(_) = win {
+                    println!("The game is won");
+                } else if draw {
+                    println!("There is a draw");
+                }
 
                 delivery
                     .ack(BasicAckOptions::default())
