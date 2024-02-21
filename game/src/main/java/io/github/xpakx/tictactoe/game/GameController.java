@@ -21,8 +21,9 @@ public class GameController {
         return service.move(id, move, principal.getName());
     }
 
-    @SubscribeMapping("/topic/game/{id}")
-    public GameMessage subscribe(@DestinationVariable Long id) {
+    @SubscribeMapping("/board/{id}")
+    public GameMessage subscribeBoard(@DestinationVariable Long id) {
+        System.out.println("Subscription");
         return service.subscribe(id);
     }
 

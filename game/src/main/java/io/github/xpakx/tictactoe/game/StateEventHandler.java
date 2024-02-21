@@ -13,7 +13,7 @@ public class StateEventHandler {
     private final GameService service;
 
     @RabbitListener(queues = "${amqp.queue.state}")
-    void handleExpedition(final StateEvent event) {
+    void handleState(final StateEvent event) {
         try {
             service.loadGame(event);
         } catch (final Exception e) {
