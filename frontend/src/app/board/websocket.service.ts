@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { IMessage, RxStomp } from '@stomp/rx-stomp';
-import { Observable } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { MoveRequest } from './dto/move-request';
+import { BoardMessage } from './dto/board-message';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,12 @@ export class WebsocketService {
   private apiUrl: String;
   connected: boolean = false;
   rxStomp?: RxStomp;
+
+  private boardSubject: Subject<BoardMessage> = new Subject<BoardMessage>();
+  private boardQueue?: Subscription;
+  private boardOOB?: Subscription;
+  board$: Observable<BoardMessage> = this.boardSubject.asObservable();
+
 
   constructor() { 
     this.apiUrl = environment.apiUrl.replace(/^http/, 'ws');
@@ -73,16 +80,17 @@ export class WebsocketService {
     if(this.rxStomp == undefined) {
       return;
     }
-    this.rxStomp
+    this.boardOOB = this.rxStomp
       .watch(`/app/board/${gameId}`)
       .subscribe((message: IMessage) => {
-        console.log(message.body);
-        // todo
+        let board: BoardMessage = JSON.parse(message.body)
+        this.boardSubject.next(board);
       });
-    this.rxStomp
+    this.boardQueue = this.rxStomp
       .watch(`/topic/board/${gameId}`)
       .subscribe((message: IMessage) => {
-        console.log(message.body);
+        let board: BoardMessage = JSON.parse(message.body)
+        this.boardSubject.next(board);
       });
   }
 
@@ -97,5 +105,4 @@ export class WebsocketService {
         console.log(message.body);
       });
   }
-
 }
