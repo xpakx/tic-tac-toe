@@ -11,4 +11,5 @@ public class MoveEvent {
     private Integer column;
     private Integer row;
     private boolean ai;
+    private String currentSymbol;
 }

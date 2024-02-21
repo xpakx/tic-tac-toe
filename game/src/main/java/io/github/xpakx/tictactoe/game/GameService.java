@@ -35,6 +35,7 @@ public class GameService {
         movePublisher.sendMove(
                 msg,
                 game.getCurrentState(),
+                game.getCurrentSymbol(),
                 game.getId(),
                 false
         );
@@ -84,7 +85,7 @@ public class GameService {
         repository.save(game);
         simpMessagingTemplate.convertAndSend("/topic/game/" + game.getId(), msg);
         if (game.aiTurn()) {
-           movePublisher.sendMove(null, game.getCurrentState(), game.getId(), true);
+           movePublisher.sendMove(null, game.getCurrentState(), game.getCurrentSymbol(), game.getId(), true);
         }
     }
 

@@ -1,6 +1,7 @@
 package io.github.xpakx.tictactoe.clients;
 
 import io.github.xpakx.tictactoe.clients.event.MoveEvent;
+import io.github.xpakx.tictactoe.game.GameSymbol;
 import io.github.xpakx.tictactoe.game.dto.MoveMessage;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,7 @@ public class MovePublisher {
         this.movesTopic = movesTopic;
     }
 
-    public void sendMove(MoveMessage message, String gameState, Long gameId, boolean ai) {
+    public void sendMove(MoveMessage message, String gameState, GameSymbol symbol, Long gameId, boolean ai) {
         MoveEvent event = new MoveEvent();
         event.setGameState(gameState);
         event.setGameId(gameId);
@@ -24,6 +25,7 @@ public class MovePublisher {
             event.setRow(message.getX());
             event.setColumn(message.getY());
         }
+        event.setCurrentSymbol(symbol != null ? symbol.toString() : "X");
         event.setAi(ai);
         template.convertAndSend(movesTopic, "move", event);
     }
