@@ -9,9 +9,9 @@ import { WebsocketService } from './websocket.service';
 export class BoardComponent implements OnInit {
   _gameId?: number;
   board: String[][] = [
-    ["", "", ""],
-    ["", "", ""],
-    ["", "", ""]
+    ["X", "", ""],
+    ["", "O", ""],
+    ["", "Empty", ""]
   ]
 
 

@@ -10,6 +10,7 @@ import { BoardComponent } from './board/board.component';
 import { MenuComponent } from './menu/menu.component';
 import { GameListComponent } from './game-list/game-list.component';
 import { NewGameModalComponent } from './new-game-modal/new-game-modal.component';
+import { FieldPipe } from './board/field.pipe';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { NewGameModalComponent } from './new-game-modal/new-game-modal.component
     BoardComponent,
     MenuComponent,
     GameListComponent,
-    NewGameModalComponent
+    NewGameModalComponent,
+    FieldPipe
   ],
   imports: [
     BrowserModule,
