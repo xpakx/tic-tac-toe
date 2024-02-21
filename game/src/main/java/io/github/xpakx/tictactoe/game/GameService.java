@@ -21,16 +21,16 @@ public class GameService {
         var gameOpt = getGameById(gameId);
         if (gameOpt.isEmpty()) {
             gamePublisher.getGame(gameId); // ???
-            return MoveMessage.rejected(move.getX(), move.getY(), username, "Game not loaded, please wait!");
+            return MoveMessage.rejected(move.getX(), move.getY(), username, GameSymbol.X, "Game not loaded, please wait!");
         }
         var game = gameOpt.get();
 
         if (game.isBlocked() || !canPlayerMove(game, move, username)) {
-            return MoveMessage.rejected(move.getX(), move.getY(), username, "Cannot move now!");
+            return MoveMessage.rejected(move.getX(), move.getY(), username, game.getCurrentSymbol(), "Cannot move now!");
         }
         game.setBlocked(true);
         repository.save(game);
-        var msg = MoveMessage.accepted(move.getX(), move.getY(), username);
+        var msg = MoveMessage.accepted(move.getX(), move.getY(), username, game.getCurrentSymbol());
 
         movePublisher.sendMove(
                 msg,
@@ -62,6 +62,7 @@ public class GameService {
                             event.getRow(),
                             event.getColumn(),
                             game.getCurrentPlayer(),
+                            game.getCurrentSymbol(),
                             "Move is illegal!"
                     )
             );
@@ -77,7 +78,7 @@ public class GameService {
                 game.setLost(true);
             }
         }
-        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer());
+        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer(), game.getCurrentSymbol());
         game.nextPlayer();
         game.setBlocked(false);
         repository.save(game);

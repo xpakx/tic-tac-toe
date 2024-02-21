@@ -23,7 +23,6 @@ public class GameController {
 
     @SubscribeMapping("/board/{id}")
     public GameMessage subscribeBoard(@DestinationVariable Long id) {
-        System.out.println("Subscription");
         return service.subscribe(id);
     }
 
