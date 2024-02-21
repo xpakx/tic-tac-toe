@@ -95,18 +95,7 @@ public class GameService {
             return msg;
         }
         var game = gameOpt.get();
-        return createGameMessage(game);
-    }
-
-    private GameMessage createGameMessage(GameState game) {
-        var msg = new GameMessage();
-        msg.setError(Optional.empty());
-        msg.setAi(game.isUser2AI());
-        msg.setUsername1(game.getUsername1());
-        msg.setUsername2(game.getUsername2());
-        msg.setState(game.getCurrentState());
-        msg.setLastMove(game.getLastMove());
-        return msg;
+        return GameMessage.of(game);
     }
 
     public void loadGame(StateEvent event) {
@@ -127,7 +116,7 @@ public class GameService {
         game.setCurrentSymbol(event.getCurrentSymbol());
         game.setFirstUserStarts(event.isFirstUserStarts());
         repository.save(game);
-        var msg = createGameMessage(game);
+        var msg = GameMessage.of(game);
         simpMessagingTemplate.convertAndSend("/topic/board/" + game.getId(), msg);
     }
 }
