@@ -74,6 +74,12 @@ export class WebsocketService {
       return;
     }
     this.rxStomp
+      .watch(`/app/board/${gameId}`)
+      .subscribe((message: IMessage) => {
+        console.log(message.body);
+        // todo
+      });
+    this.rxStomp
       .watch(`/topic/board/${gameId}`)
       .subscribe((message: IMessage) => {
         console.log(message.body);
