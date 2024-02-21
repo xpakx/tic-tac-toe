@@ -1,7 +1,18 @@
 use lapin::{Connection, ConnectionProperties, options::{BasicConsumeOptions, BasicAckOptions, QueueBindOptions, QueueDeclareOptions}, types::FieldTable, message::DeliveryResult};
+use serde::{Serialize, Deserialize};
 
 const REQUEST_QUEUE: &str = "tictactoe.moves.queue";
 const EXCHANGE_NAME: &str = "tictactoe.moves.topic";
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GameMessage {
+    game_state: String,
+    game_id: i32,
+    column: i32,
+    row: i32,
+    ai: bool,
+}
 
 pub async fn consumer() -> Result<(), lapin::Error> {
     let rabbit_uri = "amqp://guest:guest@localhost:5672";
@@ -54,8 +65,15 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                 };
 
                 let message = std::str::from_utf8(&delivery.data).unwrap();
+                let game_msg: GameMessage = match serde_json::from_str(message) {
+                    Ok(msg) => msg,
+                    Err(err) => {
+                        println!("Failed to deserialize game message: {:?}", err);
+                        return;
+                    }
+                };
 
-                println!("Received message: {}", message);
+                println!("Received message: {:?}", game_msg);
 
                 delivery
                     .ack(BasicAckOptions::default())
