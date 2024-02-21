@@ -9,9 +9,10 @@ const EXCHANGE_NAME: &str = "tictactoe.moves.topic";
 struct GameMessage {
     game_state: String,
     game_id: i32,
-    column: i32,
-    row: i32,
+    column: Option<i32>,
+    row: Option<i32>,
     ai: bool,
+    current_symbol: String,
 }
 
 pub async fn consumer() -> Result<(), lapin::Error> {
