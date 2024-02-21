@@ -24,6 +24,9 @@ export class WebsocketService {
   move$: Observable<MoveMessage> = this.moveSubject.asObservable();
 
 
+  private chatQueue?: Subscription;
+
+
   constructor() { 
     this.apiUrl = environment.apiUrl.replace(/^http/, 'ws');
   }
@@ -65,9 +68,21 @@ export class WebsocketService {
   }
 
   subscribeGame(gameId: number) {
+    this.unsubscribe();
     this.subscribeMoves(gameId);
     this.subscribeBoard(gameId);
     this.subscribeChat(gameId);
+  }
+
+  unsubscribe() {
+    this.chatQueue?.unsubscribe();
+    this.moveQueue?.unsubscribe();
+    this.boardQueue?.unsubscribe();
+    this.boardOOB?.unsubscribe();
+  }
+
+  disconnect() {
+    this.rxStomp?.deactivate();
   }
 
   subscribeMoves(gameId: number) {
@@ -91,6 +106,7 @@ export class WebsocketService {
       .subscribe((message: IMessage) => {
         let board: BoardMessage = JSON.parse(message.body)
         this.boardSubject.next(board);
+        this.boardOOB?.unsubscribe();
       });
     this.boardQueue = this.rxStomp
       .watch(`/topic/board/${gameId}`)
@@ -105,7 +121,7 @@ export class WebsocketService {
     if(this.rxStomp == undefined) {
       return;
     }
-    this.rxStomp
+    this.chatQueue = this.rxStomp
       .watch(`/topic/chat/${gameId}`)
       .subscribe((message: IMessage) => {
         console.log(message.body);

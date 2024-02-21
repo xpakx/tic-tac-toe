@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { WebsocketService } from './websocket.service';
 import { BoardMessage } from './dto/board-message';
 import { MoveMessage } from './dto/move-message';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-board',
@@ -14,7 +15,9 @@ export class BoardComponent implements OnInit {
     ["X", "", ""],
     ["", "O", ""],
     ["", "Empty", ""]
-  ]
+  ];
+  private moveSub?: Subscription;
+  private boardSub?: Subscription;
 
 
   @Input() set gameId(value: number | undefined) {
@@ -30,15 +33,22 @@ export class BoardComponent implements OnInit {
   constructor(private websocket: WebsocketService) { }
 
   ngOnInit(): void {
-    this.websocket.board$.subscribe((board: BoardMessage) => {
+    this.boardSub = this.websocket.board$.subscribe((board: BoardMessage) => {
       this.board = board.state;
       console.log(board);
     });
 
-    this.websocket.move$.subscribe((move: MoveMessage) => {
+    this.moveSub = this.websocket.move$.subscribe((move: MoveMessage) => {
       this.makeMove(move);
       console.log(move);
     });
+  }
+
+  ngOnDestroy() {
+    this.websocket.unsubscribe();
+    this.websocket.disconnect();
+    this.boardSub?.unsubscribe();
+    this.moveSub?.unsubscribe();
   }
 
   move(row: number, column: number) {
