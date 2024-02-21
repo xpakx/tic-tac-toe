@@ -4,6 +4,7 @@ import { Observable, Subject, Subscription } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { MoveRequest } from './dto/move-request';
 import { BoardMessage } from './dto/board-message';
+import { MoveMessage } from './dto/move-message';
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +18,10 @@ export class WebsocketService {
   private boardQueue?: Subscription;
   private boardOOB?: Subscription;
   board$: Observable<BoardMessage> = this.boardSubject.asObservable();
+
+  private moveSubject: Subject<MoveMessage> = new Subject<MoveMessage>();
+  private moveQueue?: Subscription;
+  move$: Observable<MoveMessage> = this.moveSubject.asObservable();
 
 
   constructor() { 
@@ -69,10 +74,11 @@ export class WebsocketService {
     if(this.rxStomp == undefined) {
       return;
     }
-    this.rxStomp
+    this.moveQueue = this.rxStomp
       .watch(`/topic/game/${gameId}`)
       .subscribe((message: IMessage) => {
-        console.log(message.body);
+        let move: MoveMessage = JSON.parse(message.body)
+        this.moveSubject.next(move);
       });
   }
 

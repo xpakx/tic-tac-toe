@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { WebsocketService } from './websocket.service';
 import { BoardMessage } from './dto/board-message';
+import { MoveMessage } from './dto/move-message';
 
 @Component({
   selector: 'app-board',
@@ -33,6 +34,11 @@ export class BoardComponent implements OnInit {
       this.board = board.state;
       console.log(board);
     });
+
+    this.websocket.move$.subscribe((move: MoveMessage) => {
+      this.makeMove(move);
+      console.log(move);
+    });
   }
 
   move(row: number, column: number) {
@@ -41,6 +47,15 @@ export class BoardComponent implements OnInit {
     }
     this.websocket.makeMove(this._gameId, { x: row, y: column });
     console.log(row, ", ", column)
+  }
+
+  makeMove(move: MoveMessage) {
+    if (!move.applied) {
+      return;
+      // todo
+    }
+    this.board[move.x][move.y] = move.currentSymbol;
+
   }
 
 }
