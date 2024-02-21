@@ -29,6 +29,7 @@ public class GameService {
             return MoveMessage.rejected(move.getX(), move.getY(), username, "Cannot move now!");
         }
         game.setBlocked(true);
+        repository.save(game);
         var msg = MoveMessage.accepted(move.getX(), move.getY(), username);
 
         movePublisher.sendMove(
@@ -79,6 +80,7 @@ public class GameService {
         var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer());
         game.nextPlayer();
         game.setBlocked(false);
+        repository.save(game);
         simpMessagingTemplate.convertAndSend("/topic/game/" + game.getId(), msg);
         if (game.aiTurn()) {
            movePublisher.sendMove(null, game.getCurrentState(), game.getId(), true);
