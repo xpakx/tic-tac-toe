@@ -14,9 +14,9 @@ public class GameEventHandler {
     private final GameRepository repository;
 
     @RabbitListener(queues = "${amqp.queue.games}")
-    void handleExpedition(final GameEvent event) {
+    void handleGame(final GameEvent event) {
         try {
-            var game = repository.findById(event.getGameId());
+            var game = repository.findWithUsersById(event.getGameId());
             game.ifPresent(publisher::sendGame);
             if (game.isEmpty()) {
                 publisher.sendError("No such game!");
