@@ -1,11 +1,13 @@
 use core::panic;
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Symbol {
     X,
     O
 }
 
+
+#[derive(Copy, Clone)]
 pub enum Field {
     Empty,
     Occ(Symbol)
@@ -36,6 +38,24 @@ impl Board{
             } 
         }
         return BitBoard {x: bitboard_x, o: bitboard_o};
+    }
+
+    pub fn from_string(s: &String) -> Option<Board> {
+        if s.len() != 9 {
+            return None;
+        }
+
+        let mut field = [Field::Empty; 9];
+
+        for (i, c) in s.chars().enumerate() {
+            match c.to_ascii_uppercase() {
+                'X' => field[i] = Field::Occ(Symbol::X),
+                'O' => field[i] = Field::Occ(Symbol::O),
+                _ => field[i] = Field::Empty,
+            }
+        }
+
+        Some(Board {field})
     }
 }
 
