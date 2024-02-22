@@ -27,6 +27,10 @@ struct EngineEvent {
     new_state: String,
     #[serde(rename= "move")]
     mv: String,
+    legal: bool,
+    finished: bool,
+    won: bool,
+    drawn: bool,
 }
 
 pub async fn consumer() -> Result<(), lapin::Error> {
@@ -82,7 +86,9 @@ pub async fn consumer() -> Result<(), lapin::Error> {
     consumer.set_delegate({
         move |delivery: DeliveryResult| {
             println!("New message");
+            let channel = channel.clone();
             async move {
+                let channel = channel.clone();
                 let delivery = match delivery {
                     Ok(Some(delivery)) => delivery,
                     Ok(None) => return,
@@ -116,7 +122,7 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                     _ => Symbol::O
                 };
 
-                let (mv, _legal) = match game_msg.ai {
+                let (mv, legal) = match game_msg.ai {
                     true => (min_max_decision(&bitboard, &symbol), true),
                     false => {
                         let Some(row) = game_msg.row else {
@@ -136,15 +142,46 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                 };
                 let bitboard = bitboard.apply_move(&mv, &symbol);
                 let win = check_win(&bitboard);
-                let draw = check_draw(&bitboard);
+                let drawn = check_draw(&bitboard);
 
                 println!("After move:");
                 bitboard.print();
                 if let Some(_) = win {
                     println!("The game is won");
-                } else if draw {
+                } else if drawn {
                     println!("There is a draw");
                 }
+
+                let won = match win {
+                    Some(_) => true,
+                    None => false
+                };
+
+                let response = EngineEvent {
+                    game_id: game_msg.game_id,
+                    column: 0, // TODO
+                    row: 0, // TODO
+                    new_state: String::from(""), // TODO
+                    mv: String::from(""), // TODO
+                    legal,
+                    finished: won || drawn,
+                    won,
+                    drawn,
+                };
+
+                let response = serde_json::to_string(&response).unwrap();
+
+                if let Err(err) = channel
+                    .basic_publish(
+                        DESTINATION_EXCHANGE,
+                        "engine",
+                        Default::default(),
+                        response.into_bytes().as_slice(),
+                        Default::default(),
+                        )
+                        .await {
+                            println!("Failed to publish message to destination exchange: {:?}", err);
+                        }
 
                 delivery
                     .ack(BasicAckOptions::default())
