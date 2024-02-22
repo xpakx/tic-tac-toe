@@ -122,5 +122,8 @@ public class GameService {
         repository.save(game);
         var msg = GameMessage.of(game);
         simpMessagingTemplate.convertAndSend("/topic/board/" + game.getId(), msg);
+        if (game.aiTurn()) {
+            movePublisher.sendMove(null, game.getCurrentState(), game.getCurrentSymbol(), game.getId(), true);
+        }
     }
 }
