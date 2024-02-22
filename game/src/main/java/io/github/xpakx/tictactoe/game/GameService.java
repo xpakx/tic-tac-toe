@@ -24,6 +24,9 @@ public class GameService {
             return MoveMessage.rejected(move.getX(), move.getY(), username, GameSymbol.X, "Game not loaded, please wait!");
         }
         var game = gameOpt.get();
+        if (game.isFinished()) {
+            return MoveMessage.rejected(move.getX(), move.getY(), username, game.getCurrentSymbol(), "Game is finished!");
+        }
 
         if (game.isBlocked() || !canPlayerMove(game, move, username)) {
             return MoveMessage.rejected(move.getX(), move.getY(), username, game.getCurrentSymbol(), "Cannot move now!");
