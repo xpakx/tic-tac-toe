@@ -127,6 +127,12 @@ public class GameService {
             simpMessagingTemplate.convertAndSend("/topic/board/" + event.getId(), msg);
             return;
         }
+        if (event.isFinished()) {
+            var msg = new GameMessage();
+            msg.setError(Optional.of("Game is already finished!"));
+            simpMessagingTemplate.convertAndSend("/topic/board/" + event.getId(), msg);
+            return;
+        }
 
         var game = new GameState();
         game.setId(event.getId());
