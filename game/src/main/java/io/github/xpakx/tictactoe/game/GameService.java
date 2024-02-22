@@ -83,7 +83,14 @@ public class GameService {
                 game.setLost(true);
             }
         }
-        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer(), game.getCurrentSymbol(), game.isFinished());
+        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer(), game.getCurrentSymbol());
+        if (game.isFinished()) {
+            msg.setFinished(true);
+            msg.setDrawn(game.isDrawn());
+            msg.setWon(game.isWon());
+            msg.setWinner(game.getWinner());
+        }
+
         game.nextPlayer();
         game.setBlocked(false);
         repository.save(game);

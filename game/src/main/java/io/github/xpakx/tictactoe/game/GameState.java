@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.data.redis.core.RedisHash;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 @Getter
 @Setter
@@ -59,6 +60,14 @@ public class GameState implements Serializable {
 
     public boolean aiTurn() {
         return user2AI && isSecondUserTurn();
+    }
+
+    public Optional<String> getWinner() {
+        if (!won) {
+            return Optional.empty();
+        }
+        var winner = getCurrentPlayer();
+        return Optional.of(winner != null ? winner : "AI");
     }
 }
 
