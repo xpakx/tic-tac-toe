@@ -80,7 +80,7 @@ public class GameService {
                 game.setLost(true);
             }
         }
-        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer(), game.getCurrentSymbol());
+        var msg = MoveMessage.of(event.getRow(), event.getColumn(), game.getCurrentPlayer(), game.getCurrentSymbol(), game.isFinished());
         game.nextPlayer();
         game.setBlocked(false);
         repository.save(game);

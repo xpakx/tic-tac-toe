@@ -20,16 +20,17 @@ public class MoveMessage {
     private boolean applied;
     private String currentSymbol;
     private Optional<String> message;
+    private boolean finished;
 
-    public static MoveMessage of(int x, int y, String username, GameSymbol symbol) {
-        return new MoveMessage(username, x, y, true, true, symbol.toString(), Optional.empty());
+    public static MoveMessage of(int x, int y, String username, GameSymbol symbol, boolean finished) {
+        return new MoveMessage(username, x, y, true, true, symbol.toString(), Optional.empty(), finished);
     }
 
     public static MoveMessage rejected(int x, int y, String username, GameSymbol symbol, String msg) {
-        return new MoveMessage(username, x, y, false, false, symbol.toString(), Optional.of(msg));
+        return new MoveMessage(username, x, y, false, false, symbol.toString(), Optional.of(msg), false);
     }
 
     public static MoveMessage accepted(int x, int y, String username, GameSymbol symbol) {
-        return new MoveMessage(username, x, y, true, false, symbol.toString(), Optional.empty());
+        return new MoveMessage(username, x, y, true, false, symbol.toString(), Optional.empty(), false);
     }
 }
