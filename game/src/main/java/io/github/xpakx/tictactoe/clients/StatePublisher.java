@@ -1,6 +1,5 @@
 package io.github.xpakx.tictactoe.clients;
 
-import io.github.xpakx.tictactoe.clients.event.GameEvent;
 import io.github.xpakx.tictactoe.clients.event.UpdateEvent;
 import io.github.xpakx.tictactoe.game.GameState;
 import org.springframework.amqp.core.AmqpTemplate;

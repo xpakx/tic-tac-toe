@@ -73,6 +73,7 @@ public class GameService {
                             "Move is illegal!"
                     )
             );
+            repository.save(game);
             return;
         }
         game.setCurrentState(event.getNewState());
