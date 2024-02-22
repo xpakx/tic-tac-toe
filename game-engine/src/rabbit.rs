@@ -1,10 +1,11 @@
-use lapin::{Connection, ConnectionProperties, options::{BasicConsumeOptions, BasicAckOptions, QueueBindOptions, QueueDeclareOptions}, types::FieldTable, message::DeliveryResult};
+use lapin::{Connection, ConnectionProperties, options::{BasicConsumeOptions, BasicAckOptions, QueueBindOptions, QueueDeclareOptions, ExchangeDeclareOptions}, types::FieldTable, message::DeliveryResult, ExchangeKind};
 use serde::{Serialize, Deserialize};
 
 use crate::{board::{Board, Symbol, Move, is_move_legal, check_win, check_draw}, minmax::min_max_decision};
 
 const REQUEST_QUEUE: &str = "tictactoe.moves.queue";
 const EXCHANGE_NAME: &str = "tictactoe.moves.topic";
+const DESTINATION_EXCHANGE: &str = "tictactoe.engine.topic";
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,6 +55,19 @@ pub async fn consumer() -> Result<(), lapin::Error> {
             )
         .await
         .expect("Cannot bind queue");
+
+    channel
+        .exchange_declare(
+            DESTINATION_EXCHANGE,
+            ExchangeKind::Topic,
+            ExchangeDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
+            FieldTable::default(),
+            )
+        .await
+        .expect("Cannot declare exchange");
 
     let consumer = channel.basic_consume(
         REQUEST_QUEUE,
