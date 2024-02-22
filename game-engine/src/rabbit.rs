@@ -110,6 +110,7 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                 println!("Received message: {:?}", &game_msg);
                 let board = Board::from_string(&game_msg.game_state);
                 let Some(board) = board else  {
+                    println!("Malformed board!");
                     return;
                 };
                 let bitboard = board.to_bitboard();
@@ -126,14 +127,17 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                     true => (min_max_decision(&bitboard, &symbol), true),
                     false => {
                         let Some(row) = game_msg.row else {
+                            println!("Row should be present for user move");
                             return;
                         };
                         let Some(column) = game_msg.column else {
+                            println!("Column should be present for user move");
                             return;
                         };
-                        let mv = Move {row, column};
+                        let mv = Move {row: row + 1, column: column + 1};
                         let mv = mv.to_bitboard();
                         let Ok(mv) = mv else {
+                            println!("Malformed move!");
                             return;
                         };
                         let legal = is_move_legal(&bitboard, &mv);
