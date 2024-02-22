@@ -3,6 +3,7 @@ import { WebsocketService } from './websocket.service';
 import { BoardMessage } from './dto/board-message';
 import { MoveMessage } from './dto/move-message';
 import { Subscription } from 'rxjs';
+import { Game } from '../main/dto/game';
 
 @Component({
   selector: 'app-board',
@@ -16,6 +17,7 @@ export class BoardComponent implements OnInit {
     ["", "O", ""],
     ["", "Empty", ""]
   ];
+  game?: BoardMessage;
   error: String[][] = [
     ["", "", ""],
     ["", "", ""],
@@ -24,10 +26,13 @@ export class BoardComponent implements OnInit {
   private moveSub?: Subscription;
   private boardSub?: Subscription;
 
+  finished: boolean = false;
+  msg: String = "";
 
   @Input() set gameId(value: number | undefined) {
     this._gameId = value;
     console.log(value);
+    this.finished = false;
     if (this._gameId) {
       console.log("calling websocket");
       this.websocket.connect();
@@ -40,6 +45,7 @@ export class BoardComponent implements OnInit {
   ngOnInit(): void {
     this.boardSub = this.websocket.board$.subscribe((board: BoardMessage) => {
       this.board = board.state;
+      this.game = board;
       console.log(board);
     });
 
@@ -73,6 +79,24 @@ export class BoardComponent implements OnInit {
       return;
     }
     this.board[move.x][move.y] = move.currentSymbol;
+
+    if (move.finished) {
+      this.finished = true;
+      if (move.drawn) {
+        console.log("Draw!");
+        this.msg = "Draw!";
+      } else if (move.finished) {
+        console.log(`${move.winner} won!`);
+        let currentUser = localStorage.getItem("username");
+        if(currentUser == move.winner) {
+          this.msg = "You won!";
+        } else if (currentUser == this.game?.username1 || currentUser == this.game?.username2) {
+          this.msg = "You lost!";
+        } else {
+          this.msg = `${move.winner} won!`;
+        }
+      } 
+    }
 
   }
 

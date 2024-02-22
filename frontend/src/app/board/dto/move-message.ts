@@ -6,4 +6,8 @@ export interface MoveMessage {
     legal: boolean;
     applied: boolean;
     message?: String;
+    finished: boolean ;
+    drawn: boolean ;
+    won: boolean ;
+    winner?: String;
 }
