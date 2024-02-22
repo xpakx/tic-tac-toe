@@ -163,12 +163,27 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                             None => false
                         };
 
+                        let mut row = 0;
+                        let mut column = 0;
+                        let mut mask = 0b100000000;
+                        for _ in 0..9 {
+                            if mask & mv != 0 {
+                                break;
+                            }
+                            column += 1;
+                            if column >= 3 {
+                                column = 0;
+                                row += 1;
+                            }
+                            mask = mask >> 1;
+                        }
+
                         EngineEvent {
                             game_id: game_msg.game_id,
-                            column: 0, // TODO
-                            row: 0, // TODO
+                            column,
+                            row,
                             new_state: bitboard.to_string(),
-                            mv: String::from(""), // TODO
+                            mv: move_to_string(&mv, &symbol),
                             legal,
                             finished: won || drawn,
                             won,
@@ -187,7 +202,7 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                                 None => 0
                             },
                             new_state: bitboard.to_string(),
-                            mv: String::from(""), // TODO
+                            mv: move_to_string(&mv, &symbol),
                             legal: false,
                             finished: false,
                             won: false,
@@ -222,4 +237,23 @@ pub async fn consumer() -> Result<(), lapin::Error> {
     );
 
     Ok(())
+}
+
+
+fn move_to_string(mv: &i32, symbol: &Symbol) -> String {
+    let mut result = String::with_capacity(9);
+    let mut mask = 0b100000000;
+    for _ in 0..9 {
+        let bit = mv & mask;
+        let symbol = match bit {
+            0 => '?',
+            _ => match symbol {
+                Symbol::X => 'X',
+                Symbol::O => 'O',
+            }
+        };
+        mask = mask >> 1;
+        result.push(symbol);
+    }
+    result
 }
