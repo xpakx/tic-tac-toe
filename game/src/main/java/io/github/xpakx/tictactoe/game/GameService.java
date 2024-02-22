@@ -72,6 +72,7 @@ public class GameService {
         game.setCurrentState(event.getNewState());
         game.setLastMove(event.getMove());
         if (event.isFinished()) {
+            game.setFinished(true);
             game.setDrawn(event.isDrawn());
             if (event.isWon() && game.isFirstUserTurn()) {
                 game.setWon(true);
@@ -84,7 +85,7 @@ public class GameService {
         game.setBlocked(false);
         repository.save(game);
         simpMessagingTemplate.convertAndSend("/topic/game/" + game.getId(), msg);
-        if (game.aiTurn()) {
+        if (!game.isFinished() && game.aiTurn()) {
            movePublisher.sendMove(null, game.getCurrentState(), game.getCurrentSymbol(), game.getId(), true);
         }
     }
