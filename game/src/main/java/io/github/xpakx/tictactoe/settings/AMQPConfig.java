@@ -16,13 +16,16 @@ import org.springframework.messaging.handler.annotation.support.MessageHandlerMe
 public class AMQPConfig {
     private final String movesTopic;
     private final String gamesTopic;
+    private final String updatesTopic;
 
     public AMQPConfig(
             @Value("${amqp.exchange.moves}") final String movesTopic,
-            @Value("${amqp.exchange.games}") final String gamesTopic
+            @Value("${amqp.exchange.games}") final String gamesTopic,
+            @Value("${amqp.exchange.updates}") final String updatesTopic
     ) {
         this.movesTopic = movesTopic;
         this.gamesTopic = gamesTopic;
+        this.updatesTopic= updatesTopic;
     }
 
     @Bean
@@ -37,6 +40,14 @@ public class AMQPConfig {
     public TopicExchange gamesTopicExchange() {
         return ExchangeBuilder
                 .topicExchange(gamesTopic)
+                .durable(true)
+                .build();
+    }
+
+    @Bean
+    public TopicExchange updatesTopicExchange() {
+        return ExchangeBuilder
+                .topicExchange(updatesTopic)
                 .durable(true)
                 .build();
     }

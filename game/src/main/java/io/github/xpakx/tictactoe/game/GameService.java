@@ -2,11 +2,13 @@ package io.github.xpakx.tictactoe.game;
 
 import io.github.xpakx.tictactoe.clients.GamePublisher;
 import io.github.xpakx.tictactoe.clients.MovePublisher;
+import io.github.xpakx.tictactoe.clients.StatePublisher;
 import io.github.xpakx.tictactoe.game.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -16,6 +18,7 @@ public class GameService {
     private final GamePublisher gamePublisher;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final GameRepository repository;
+    private final StatePublisher statePublisher;
 
     public MoveMessage move(Long gameId, MoveRequest move, String username) {
         var gameOpt = getGameById(gameId);
@@ -89,11 +92,14 @@ public class GameService {
             msg.setDrawn(game.isDrawn());
             msg.setWon(game.isWon());
             msg.setWinner(game.getWinner());
+            statePublisher.publish(game);
+            repository.deleteById(game.getId());
+        } else {
+            game.nextPlayer();
+            game.setBlocked(false);
+            repository.save(game);
         }
 
-        game.nextPlayer();
-        game.setBlocked(false);
-        repository.save(game);
         simpMessagingTemplate.convertAndSend("/topic/game/" + game.getId(), msg);
         if (!game.isFinished() && game.aiTurn()) {
            movePublisher.sendMove(null, game.getCurrentState(), game.getCurrentSymbol(), game.getId(), true);
