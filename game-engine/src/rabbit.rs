@@ -144,35 +144,60 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                         (mv, legal)
                     }
                 };
-                let bitboard = bitboard.apply_move(&mv, &symbol);
-                let win = check_win(&bitboard);
-                let drawn = check_draw(&bitboard);
+                let response = match legal {
+                    true => {
+                        let bitboard = bitboard.apply_move(&mv, &symbol);
+                        let win = check_win(&bitboard);
+                        let drawn = check_draw(&bitboard);
 
-                println!("After move:");
-                bitboard.print();
-                if let Some(_) = win {
-                    println!("The game is won");
-                } else if drawn {
-                    println!("There is a draw");
-                }
+                        println!("After move:");
+                        bitboard.print();
+                        if let Some(_) = win {
+                            println!("The game is won");
+                        } else if drawn {
+                            println!("There is a draw");
+                        }
 
-                let won = match win {
-                    Some(_) => true,
-                    None => false
+                        let won = match win {
+                            Some(_) => true,
+                            None => false
+                        };
+
+                        EngineEvent {
+                            game_id: game_msg.game_id,
+                            column: 0, // TODO
+                            row: 0, // TODO
+                            new_state: String::from(""),
+                            mv: String::from(""), // TODO
+                            legal,
+                            finished: won || drawn,
+                            won,
+                            drawn,
+                        }
+                    },
+                    false => {
+                        EngineEvent {
+                            game_id: game_msg.game_id,
+                            column: match game_msg.column {
+                                Some(x) => x,
+                                None => 0
+                            },
+                            row: match game_msg.row {
+                                Some(x) => x,
+                                None => 0
+                            },
+                            new_state: bitboard.to_string(),
+                            mv: String::from(""), // TODO
+                            legal: false,
+                            finished: false,
+                            won: false,
+                            drawn: false,
+                        }
+                    }
                 };
 
-                let response = EngineEvent {
-                    game_id: game_msg.game_id,
-                    column: 0, // TODO
-                    row: 0, // TODO
-                    new_state: String::from(""), // TODO
-                    mv: String::from(""), // TODO
-                    legal,
-                    finished: won || drawn,
-                    won,
-                    drawn,
-                };
 
+                println!("Response: {:?}", &response);
                 let response = serde_json::to_string(&response).unwrap();
 
                 if let Err(err) = channel
