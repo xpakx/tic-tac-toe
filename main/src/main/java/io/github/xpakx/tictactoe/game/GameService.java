@@ -1,9 +1,6 @@
 package io.github.xpakx.tictactoe.game;
 
-import io.github.xpakx.tictactoe.game.dto.AcceptRequest;
-import io.github.xpakx.tictactoe.game.dto.GameRequest;
-import io.github.xpakx.tictactoe.game.dto.GameSummary;
-import io.github.xpakx.tictactoe.game.dto.NewGameResponse;
+import io.github.xpakx.tictactoe.game.dto.*;
 import io.github.xpakx.tictactoe.game.error.GameNotFoundException;
 import io.github.xpakx.tictactoe.game.error.RequestProcessedException;
 import io.github.xpakx.tictactoe.game.error.UnauthorizedGameRequestChangeException;
@@ -11,6 +8,7 @@ import io.github.xpakx.tictactoe.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 
@@ -99,5 +97,17 @@ public class GameService {
         }
         gameRepository.save(game);
         return decision.isAccepted();
+    }
+
+    public void updateGame(Game game, UpdateEvent event) {
+        game.setCurrentState(event.getCurrentState());
+        game.setCurrentSymbol(event.getCurrentSymbol());
+        game.setLastMove(event.getLastMove());
+        game.setLastMoveAt(LocalDateTime.now());
+        game.setFinished(event.isFinished());
+        game.setWon(event.isWon());
+        game.setLost(event.isLost());
+        game.setDrawn(event.isDrawn());
+        gameRepository.save(game);
     }
 }

@@ -53,6 +53,23 @@ public class AMQPConfig {
     }
 
     @Bean
+    public TopicExchange updatesTopicExchange(@Value("${amqp.exchange.updates}") final String exchangeName) {
+        return ExchangeBuilder.topicExchange(exchangeName).durable(true).build();
+    }
+
+    @Bean
+    public Queue updatesQueue(@Value("${amqp.queue.updates}") final String queueName) {
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
+    public Binding updatesBinding(final Queue updatesQueue, final TopicExchange updatesTopicExchange) {
+        return BindingBuilder.bind(updatesQueue)
+                .to(updatesTopicExchange)
+                .with("update");
+    }
+
+    @Bean
     public MessageHandlerMethodFactory messageHandlerMethodFactory() {
         DefaultMessageHandlerMethodFactory factory = new DefaultMessageHandlerMethodFactory();
         final MappingJackson2MessageConverter jsonConverter = new MappingJackson2MessageConverter();
