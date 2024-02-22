@@ -76,10 +76,10 @@ public class GameMessage {
     }
 
     private static String charToSymbol(char c) {
-        if(c == 'x') {
+        if(c == 'x' || c == 'X') {
             return "X";
         }
-        if(c == 'o') {
+        if(c == 'o' || c == 'O') {
             return "O";
         }
         return "Empty";
