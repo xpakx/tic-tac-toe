@@ -142,6 +142,24 @@ impl BitBoard {
         }
         println!("╰───┴───┴───╯");
     }
+
+    pub fn to_string(&self) -> String {
+        let mut result = String::with_capacity(9);
+        let mut mask = 0b100000000;
+        for _ in 0..9 {
+            let bit_x = self.x & mask;
+            let bit_o = self.o & mask;
+            let symbol = match (bit_x, bit_o) {
+                (0, 0) => '?',
+                (a, 0) if a > 0 => 'X',
+                (0, a) if a > 0 => 'O',
+                _ => '?',
+            };
+            mask = mask >> 1;
+            result.push(symbol);
+        }
+        result
+    }
 }
 
 fn get_symbol(bits_x: i32, bits_o: i32, bit: i32) -> &'static str {

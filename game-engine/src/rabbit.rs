@@ -167,7 +167,7 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                             game_id: game_msg.game_id,
                             column: 0, // TODO
                             row: 0, // TODO
-                            new_state: String::from(""),
+                            new_state: bitboard.to_string(),
                             mv: String::from(""), // TODO
                             legal,
                             finished: won || drawn,
