@@ -17,6 +17,17 @@ struct GameMessage {
     current_symbol: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EngineEvent {
+    game_id: i32,
+    column: i32,
+    row: i32,
+    new_state: String,
+    #[serde(rename= "move")]
+    mv: String,
+}
+
 pub async fn consumer() -> Result<(), lapin::Error> {
     let rabbit_uri = "amqp://guest:guest@localhost:5672";
     let conn = Connection::connect(&rabbit_uri, ConnectionProperties::default())
