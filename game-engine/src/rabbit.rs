@@ -106,112 +106,9 @@ pub async fn consumer() -> Result<(), lapin::Error> {
                         return;
                     }
                 };
-
                 println!("Received message: {:?}", &game_msg);
-                let board = Board::from_string(&game_msg.game_state);
-                let Some(board) = board else  {
-                    println!("Malformed board!");
-                    return;
-                };
-                let bitboard = board.to_bitboard();
 
-                println!("Before move:");
-                bitboard.print();
-
-                let symbol = match game_msg.current_symbol.as_str() {
-                    "x" | "X" => Symbol::X,
-                    _ => Symbol::O
-                };
-
-                let (mv, legal) = match game_msg.ai {
-                    true => (min_max_decision(&bitboard, &symbol), true),
-                    false => {
-                        let Some(row) = game_msg.row else {
-                            println!("Row should be present for user move");
-                            return;
-                        };
-                        let Some(column) = game_msg.column else {
-                            println!("Column should be present for user move");
-                            return;
-                        };
-                        let mv = Move {row: row + 1, column: column + 1};
-                        let mv = mv.to_bitboard();
-                        let Ok(mv) = mv else {
-                            println!("Malformed move!");
-                            return;
-                        };
-                        let legal = is_move_legal(&bitboard, &mv);
-                        (mv, legal)
-                    }
-                };
-                let response = match legal {
-                    true => {
-                        let bitboard = bitboard.apply_move(&mv, &symbol);
-                        let win = check_win(&bitboard);
-                        let drawn = check_draw(&bitboard);
-
-                        println!("After move:");
-                        bitboard.print();
-                        if let Some(_) = win {
-                            println!("The game is won");
-                        } else if drawn {
-                            println!("There is a draw");
-                        }
-
-                        let won = match win {
-                            Some(_) => true,
-                            None => false
-                        };
-
-                        let mut row = 0;
-                        let mut column = 0;
-                        let mut mask = 0b100000000;
-                        for _ in 0..9 {
-                            if mask & mv != 0 {
-                                break;
-                            }
-                            column += 1;
-                            if column >= 3 {
-                                column = 0;
-                                row += 1;
-                            }
-                            mask = mask >> 1;
-                        }
-
-                        EngineEvent {
-                            game_id: game_msg.game_id,
-                            column,
-                            row,
-                            new_state: bitboard.to_string(),
-                            mv: move_to_string(&mv, &symbol),
-                            legal,
-                            finished: won || drawn,
-                            won,
-                            drawn,
-                        }
-                    },
-                    false => {
-                        EngineEvent {
-                            game_id: game_msg.game_id,
-                            column: match game_msg.column {
-                                Some(x) => x,
-                                None => 0
-                            },
-                            row: match game_msg.row {
-                                Some(x) => x,
-                                None => 0
-                            },
-                            new_state: bitboard.to_string(),
-                            mv: move_to_string(&mv, &symbol),
-                            legal: false,
-                            finished: false,
-                            won: false,
-                            drawn: false,
-                        }
-                    }
-                };
-
-
+                let response = process_event(&game_msg);
                 println!("Response: {:?}", &response);
                 let response = serde_json::to_string(&response).unwrap();
 
@@ -256,4 +153,137 @@ fn move_to_string(mv: &i32, symbol: &Symbol) -> String {
         result.push(symbol);
     }
     result
+}
+
+impl Default for EngineEvent {
+    fn default() -> EngineEvent {
+        EngineEvent { 
+            game_id: -1,
+            column: 0,
+            row: 0,
+            new_state: String::from(""),
+            mv: String::from(""),
+            legal: false,
+            finished: false,
+            won: false,
+            drawn: false 
+        } 
+    } 
+}
+
+fn process_event(game_msg: &GameMessage) -> EngineEvent {
+    let board = Board::from_string(&game_msg.game_state);
+    let Some(board) = board else  {
+        println!("Malformed board!");
+        return EngineEvent {
+            game_id: game_msg.game_id, 
+            ..Default::default()
+        };
+    };
+    let bitboard = board.to_bitboard();
+
+    println!("Before move:");
+    bitboard.print();
+
+    let symbol = match game_msg.current_symbol.as_str() {
+        "x" | "X" => Symbol::X,
+        _ => Symbol::O
+    };
+
+    let (mv, legal) = match game_msg.ai {
+        true => (min_max_decision(&bitboard, &symbol), true),
+        false => {
+            let Some(row) = game_msg.row else {
+                println!("Row should be present for user move");
+                return EngineEvent {
+                    game_id: game_msg.game_id, 
+                    ..Default::default()
+                };
+            };
+            let Some(column) = game_msg.column else {
+                println!("Column should be present for user move");
+                return EngineEvent {
+                    game_id: game_msg.game_id, 
+                    ..Default::default()
+                };
+            };
+            let mv = Move {row: row + 1, column: column + 1};
+            let mv = mv.to_bitboard();
+            let Ok(mv) = mv else {
+                println!("Malformed move!");
+                return EngineEvent {
+                    game_id: game_msg.game_id, 
+                    ..Default::default()
+                };
+            };
+            let legal = is_move_legal(&bitboard, &mv);
+            (mv, legal)
+        }
+    };
+    match legal {
+        true => {
+            let bitboard = bitboard.apply_move(&mv, &symbol);
+            let win = check_win(&bitboard);
+            let drawn = check_draw(&bitboard);
+
+            println!("After move:");
+            bitboard.print();
+            if let Some(_) = win {
+                println!("The game is won");
+            } else if drawn {
+                println!("There is a draw");
+            }
+
+            let won = match win {
+                Some(_) => true,
+                None => false
+            };
+
+            let mut row = 0;
+            let mut column = 0;
+            let mut mask = 0b100000000;
+            for _ in 0..9 {
+                if mask & mv != 0 {
+                    break;
+                }
+                column += 1;
+                if column >= 3 {
+                    column = 0;
+                    row += 1;
+                }
+                mask = mask >> 1;
+            }
+
+            EngineEvent {
+                game_id: game_msg.game_id,
+                column,
+                row,
+                new_state: bitboard.to_string(),
+                mv: move_to_string(&mv, &symbol),
+                legal,
+                finished: won || drawn,
+                won,
+                drawn,
+            }
+        },
+        false => {
+            EngineEvent {
+                game_id: game_msg.game_id,
+                column: match game_msg.column {
+                    Some(x) => x,
+                    None => 0
+                },
+                row: match game_msg.row {
+                    Some(x) => x,
+                    None => 0
+                },
+                new_state: bitboard.to_string(),
+                mv: move_to_string(&mv, &symbol),
+                legal: false,
+                finished: false,
+                won: false,
+                drawn: false,
+            }
+        }
+    }
 }
