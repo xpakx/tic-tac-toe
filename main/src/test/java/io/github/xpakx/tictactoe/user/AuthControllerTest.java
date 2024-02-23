@@ -1,5 +1,6 @@
 package io.github.xpakx.tictactoe.user;
 
+import io.github.xpakx.tictactoe.user.dto.AuthenticationRequest;
 import io.github.xpakx.tictactoe.user.dto.RegistrationRequest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
@@ -23,8 +24,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.*;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -185,11 +185,44 @@ class AuthControllerTest {
                 .body("token", notNullValue());
     }
 
+    @Test
+    void shouldNotAuthenticateIfPasswordIsWrong() {
+        AuthenticationRequest request = getAuthRequest("test_user", "password2");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/authenticate")
+                .then()
+                .statusCode(UNAUTHORIZED.value())
+                .body("message", containsStringIgnoringCase("invalid password"));
+    }
+
+    @Test
+    void shouldNotAuthenticateIfUserDoesNotExist() {
+        AuthenticationRequest request = getAuthRequest("new_user", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/authenticate")
+                .then()
+                .statusCode(FORBIDDEN.value())
+                .body("message", containsStringIgnoringCase("no user with username"));
+    }
+
     private RegistrationRequest getRegRequest(String username, String password, String password2) {
         RegistrationRequest request = new RegistrationRequest();
         request.setUsername(username);
         request.setPassword(password);
         request.setPasswordRe(password2);
+        return request;
+    }
+
+    private AuthenticationRequest getAuthRequest(String username, String password) {
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setUsername(username);
+        request.setPassword(password);
         return request;
     }
 }
