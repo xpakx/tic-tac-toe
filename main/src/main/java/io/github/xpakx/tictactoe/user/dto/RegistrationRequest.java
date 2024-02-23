@@ -22,4 +22,9 @@ public class RegistrationRequest {
     private boolean isPasswordRepeated() {
         return Objects.equals(password, passwordRe);
     }
+
+    @AssertTrue(message = "Username cannot start with \"AI\"!")
+    private boolean isUsernameDoesNotStartWithAI() {
+        return Objects.isNull(username) || !username.startsWith("AI");
+    }
 }
