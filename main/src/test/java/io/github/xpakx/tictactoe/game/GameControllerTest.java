@@ -26,11 +26,10 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsStringIgnoringCase;
-import static org.hamcrest.Matchers.hasItem;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.springframework.http.HttpStatus.*;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -39,10 +38,13 @@ class GameControllerTest {
     @LocalServerPort
     private int port;
     private String baseUrl;
+    private Long userId;
+
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
             DockerImageName.parse("postgres:15.1")
     ).withDatabaseName("ttt_test");
+
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -65,6 +67,7 @@ class GameControllerTest {
         User user = new User();
         user.setPassword("password");
         user.setUsername("test_user");
+        this.userId = userRepository.save(user).getId();
     }
 
     @AfterEach
@@ -149,6 +152,55 @@ class GameControllerTest {
                 .body("message", containsStringIgnoringCase("user not found"));
     }
 
+    @Test
+    void shouldCreateGameAgainstUser() {
+        var opponentId = createUser("opponent");
+        GameRequest request = getGameRequest("opponent");
+        Integer gameId = given()
+                .contentType(ContentType.JSON)
+                .header(getHeaderForUser("test_user"))
+                .body(request)
+                .when()
+                .post(baseUrl + "/game")
+                .then()
+                .statusCode(CREATED.value())
+                .extract()
+                .path("id");
+        var gameOpt = gameRepository.findById(gameId.longValue());
+        assert(gameOpt.isPresent());
+        var game = gameOpt.get();
+        assertThat(game.isAccepted(), is(false));
+        assertThat(game.getCurrentState(), equalTo("?????????"));
+        assertThat(game.getType(), equalTo(GameType.USER));
+        assertThat(game.getCurrentSymbol(), equalTo(GameSymbol.X));
+        assertThat(game.getUser().getId(), equalTo(userId));
+        assertThat(game.getOpponent().getId(), equalTo(opponentId));
+    }
+
+    @Test
+    void shouldCreateGameAgainstAI() {
+        GameRequest request = getGameRequest();
+        Integer gameId = given()
+                .contentType(ContentType.JSON)
+                .header(getHeaderForUser("test_user"))
+                .body(request)
+                .when()
+                .post(baseUrl + "/game")
+                .then()
+                .statusCode(CREATED.value())
+                .extract()
+                .path("id");
+        var gameOpt = gameRepository.findById(gameId.longValue());
+        assert(gameOpt.isPresent());
+        var game = gameOpt.get();
+        assertThat(game.isAccepted(), is(true));
+        assertThat(game.getCurrentState(), equalTo("?????????"));
+        assertThat(game.getType(), equalTo(GameType.AI));
+        assertThat(game.getCurrentSymbol(), equalTo(GameSymbol.X));
+        assertThat(game.getUser().getId(), equalTo(userId));
+        assertThat(game.getOpponent(), nullValue());
+    }
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);
@@ -168,5 +220,12 @@ class GameControllerTest {
         var token = jwt.generateToken(new org.springframework.security.core.userdetails.User(username, "", List.of()));
         var header = "Bearer " + token;
         return new Header("Authorization", header);
+    }
+
+    private Long createUser(String username) {
+        User user = new User();
+        user.setPassword("password");
+        user.setUsername(username);
+        return userRepository.save(user).getId();
     }
 }

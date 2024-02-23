@@ -56,6 +56,7 @@ class AuthControllerTest {
         User user = new User();
         user.setPassword(passwordEncoder.encode("password"));
         user.setUsername("test_user");
+        userRepository.save(user);
     }
 
     @AfterEach
