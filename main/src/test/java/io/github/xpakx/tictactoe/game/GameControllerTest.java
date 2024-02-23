@@ -77,6 +77,18 @@ class GameControllerTest {
     }
 
     @Test
+    void unauthorizedUserShouldNotBeAbleToCreateGame() {
+        GameRequest request = getGameRequest();
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/game")
+                .then()
+                .statusCode(UNAUTHORIZED.value());
+    }
+
+    @Test
     void aiGameRequestShouldNotHaveUsername() {
         GameRequest request = getGameRequest(GameType.AI, "username");
         given()
