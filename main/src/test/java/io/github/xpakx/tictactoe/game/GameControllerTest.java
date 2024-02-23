@@ -233,6 +233,39 @@ class GameControllerTest {
                 .body("message", containsStringIgnoringCase("user not found"));
     }
 
+    @Test
+    void shouldRespondWithEmptyListOfRequests() {
+        given()
+                .header(getHeaderForUser("test_user"))
+                .when()
+                .get(baseUrl + "/game/request")
+                .then()
+                .statusCode(OK.value())
+                .body("$", hasSize(0));
+    }
+
+    @Test
+    void shouldRespondWithUserRequests() {
+        var otherId = createUser("new_user");
+        var userGameId = createGame(userId, otherId);
+        var game1Id = createGame(otherId, userId);
+        var game2Id = createGame(otherId, userId);
+        var acceptedGameId = createGame(otherId, userId, true);
+        var aiGame = createGame();
+        given()
+                .header(getHeaderForUser("test_user"))
+                .when()
+                .get(baseUrl + "/game/request")
+                .then()
+                .statusCode(OK.value())
+                .body("$", hasSize(2))
+                .body("id", hasItem(game1Id.intValue()))
+                .body("id", hasItem(game2Id.intValue()))
+                .body("id", not(hasItem(userGameId.intValue())))
+                .body("id", not(hasItem(acceptedGameId.intValue())))
+                .body("id", not(hasItem(aiGame.intValue())));
+    }
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);
@@ -259,5 +292,32 @@ class GameControllerTest {
         user.setPassword("password");
         user.setUsername(username);
         return userRepository.save(user).getId();
+    }
+
+    private Long createGame(Long userId, Long opponentId) {
+        return createGame(userId, opponentId, false);
+    }
+
+    private Long createGame(Long userId, Long opponentId, boolean accepted) {
+        Game game = new Game();
+        game.setUser(userRepository.getReferenceById(userId));
+        game.setOpponent(userRepository.getReferenceById(opponentId));
+        game.setCurrentState("?????????");
+        game.setType(GameType.USER);
+        game.setCurrentSymbol(GameSymbol.X);
+        game.setUserStarts(true);
+        game.setAccepted(accepted);
+        return gameRepository.save(game).getId();
+    }
+
+    private Long createGame() {
+        Game game = new Game();
+        game.setUser(userRepository.getReferenceById(userId));
+        game.setCurrentState("?????????");
+        game.setType(GameType.AI);
+        game.setCurrentSymbol(GameSymbol.X);
+        game.setUserStarts(true);
+        game.setAccepted(true);
+        return gameRepository.save(game).getId();
     }
 }
