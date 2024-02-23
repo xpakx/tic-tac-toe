@@ -155,6 +155,20 @@ class AuthControllerTest {
         assertThat(users, hasItem(hasProperty("username", equalTo("new_user"))));
     }
 
+    @Test
+    void shouldReturnTokenAfterRegistration() {
+        RegistrationRequest request = getRegRequest("new_user", "password", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(CREATED.value())
+                .body("username", equalTo("new_user"))
+                .body("token", notNullValue());
+    }
+
     private RegistrationRequest getRegRequest(String username, String password, String password2) {
         RegistrationRequest request = new RegistrationRequest();
         request.setUsername(username);
