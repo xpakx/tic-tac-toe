@@ -32,7 +32,6 @@ class AuthControllerTest {
     @LocalServerPort
     private int port;
     private String baseUrl;
-    private Long userId;
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
             DockerImageName.parse("postgres:15.1")
@@ -57,7 +56,6 @@ class AuthControllerTest {
         User user = new User();
         user.setPassword(passwordEncoder.encode("password"));
         user.setUsername("test_user");
-        userId = userRepository.save(user).getId();
     }
 
     @AfterEach
