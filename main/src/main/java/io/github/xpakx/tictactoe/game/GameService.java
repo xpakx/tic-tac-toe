@@ -34,7 +34,7 @@ public class GameService {
         newGame.setUser(userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new));
         newGame.setCurrentState("?????????");
         newGame.setType(GameType.USER);
-        newGame.setOpponent(userRepository.findByUsername(opponent).orElseThrow());
+        newGame.setOpponent(userRepository.findByUsername(opponent).orElseThrow(UserNotFoundException::new));
         newGame.setCurrentSymbol(GameSymbol.X);
         Random random = new Random();
         newGame.setUserStarts(random.nextBoolean());
