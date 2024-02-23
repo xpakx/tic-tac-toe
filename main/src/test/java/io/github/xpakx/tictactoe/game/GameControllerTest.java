@@ -135,6 +135,20 @@ class GameControllerTest {
                 .body("message", containsStringIgnoringCase("user not found"));
     }
 
+    @Test
+    void userCreatingGameShouldExist() {
+        GameRequest request = getGameRequest("new_user");
+        given()
+                .contentType(ContentType.JSON)
+                .header(getHeaderForUser("test_user"))
+                .body(request)
+                .when()
+                .post(baseUrl + "/game")
+                .then()
+                .statusCode(NOT_FOUND.value())
+                .body("message", containsStringIgnoringCase("user not found"));
+    }
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);
