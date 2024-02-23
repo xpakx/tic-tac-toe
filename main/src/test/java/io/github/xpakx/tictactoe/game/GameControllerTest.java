@@ -213,6 +213,26 @@ class GameControllerTest {
         assertThat(game.getOpponent(), nullValue());
     }
 
+    @Test
+    void unauthorizedUserShouldNotBeAbleToViewRequests() {
+        given()
+                .when()
+                .get(baseUrl + "/game/request")
+                .then()
+                .statusCode(UNAUTHORIZED.value());
+    }
+
+    @Test
+    void userGettingRequestsShouldExist() {
+        given()
+                .header(getHeaderForUser("new_user"))
+                .when()
+                .get(baseUrl + "/game/request")
+                .then()
+                .statusCode(NOT_FOUND.value())
+                .body("message", containsStringIgnoringCase("user not found"));
+    }
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);

@@ -56,7 +56,7 @@ public class GameService {
     public List<GameSummary> getRequests(String username) {
         return gameRepository.findRequests(
                 userRepository.findByUsername(username)
-                        .orElseThrow()
+                        .orElseThrow(UserNotFoundException::new)
                         .getId()
                 ).stream()
                 .map(GameSummary::of).toList();
