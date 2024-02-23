@@ -211,6 +211,20 @@ class AuthControllerTest {
                 .body("message", containsStringIgnoringCase("no user with username"));
     }
 
+    @Test
+    void shouldAuthenticateAndReturnToken() {
+        AuthenticationRequest request = getAuthRequest("test_user", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/authenticate")
+                .then()
+                .statusCode(OK.value())
+                .body("username", equalTo("test_user"))
+                .body("token", notNullValue());
+    }
+
     private RegistrationRequest getRegRequest(String username, String password, String password2) {
         RegistrationRequest request = new RegistrationRequest();
         request.setUsername(username);
