@@ -109,6 +109,7 @@ class AuthControllerTest {
                 .body("errors", hasItem(containsStringIgnoringCase("username cannot be empty")));
 
     }
+
     @ParameterizedTest
     @ValueSource(strings = {"a", "test", "too_long_username"})
     void usernameMustBeOfCorrectLength(String username) {
@@ -138,6 +139,21 @@ class AuthControllerTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("message", containsStringIgnoringCase(("validation failed")))
                 .body("errors", hasItem(containsStringIgnoringCase("password cannot be empty")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"AI: user", "AI user", "AIuser"})
+    void usernameCannotStartWithAI(String username) {
+        RegistrationRequest request = getRegRequest(username, "password", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase(("validation failed")))
+                .body("errors", hasItem(containsStringIgnoringCase("username cannot start with \"ai\"")));
     }
 
     @Test
