@@ -10,6 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -116,6 +118,21 @@ class GameControllerTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("message", containsStringIgnoringCase("validation failed"))
                 .body("errors", hasItem(containsStringIgnoringCase("game type cannot be null")));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GameType.class)
+    void userCreatingGameShouldExist(GameType type) {
+        GameRequest request = getGameRequest(type, type == GameType.USER  ? "test_user" : null);
+        given()
+                .contentType(ContentType.JSON)
+                .header(getHeaderForUser("new_user"))
+                .body(request)
+                .when()
+                .post(baseUrl + "/game")
+                .then()
+                .statusCode(NOT_FOUND.value())
+                .body("message", containsStringIgnoringCase("user not found"));
     }
 
     private GameRequest getGameRequest(GameType type, String username) {
