@@ -26,7 +26,6 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.http.HttpStatus.*;
@@ -247,9 +246,9 @@ class GameControllerTest {
     @Test
     void shouldRespondWithUserRequests() {
         var otherId = createUser("new_user");
-        var userGameId = createGame(userId, otherId);
-        var game1Id = createGame(otherId, userId);
-        var game2Id = createGame(otherId, userId);
+        var userGameId = createRequest(userId, otherId);
+        var game1Id = createRequest(otherId, userId);
+        var game2Id = createRequest(otherId, userId);
         var acceptedGameId = createGame(otherId, userId, true);
         var aiGame = createGame();
         given()
@@ -264,6 +263,64 @@ class GameControllerTest {
                 .body("id", not(hasItem(userGameId.intValue())))
                 .body("id", not(hasItem(acceptedGameId.intValue())))
                 .body("id", not(hasItem(aiGame.intValue())));
+    }
+
+    @Test
+    void unauthorizedUserShouldNotBeAbleToViewGames() {
+        given()
+                .when()
+                .get(baseUrl + "/game")
+                .then()
+                .statusCode(UNAUTHORIZED.value());
+    }
+
+    @Test
+    void userGettingGamesShouldExist() {
+        given()
+                .header(getHeaderForUser("new_user"))
+                .when()
+                .get(baseUrl + "/game")
+                .then()
+                .statusCode(NOT_FOUND.value())
+                .body("message", containsStringIgnoringCase("user not found"));
+    }
+
+    @Test
+    void shouldRespondWithEmptyListOfGames() {
+        given()
+                .header(getHeaderForUser("test_user"))
+                .when()
+                .get(baseUrl + "/game")
+                .then()
+                .statusCode(OK.value())
+                .body("$", hasSize(0));
+    }
+
+    @Test
+    void shouldRespondWithUserGames() {
+        var otherId = createUser("new_user");
+        var userGameId = createGame(userId, otherId);
+        var gameId = createGame(otherId, userId);
+        var aiGameId = createGame();
+
+        var requestId = createRequest(otherId, userId);
+        var rejectedId = createRejectedRequest(otherId, userId);
+        var finishedId = createFinishedGame(userId, otherId);
+        var aiFinishedId = createFinishedGame();
+        given()
+                .header(getHeaderForUser("test_user"))
+                .when()
+                .get(baseUrl + "/game")
+                .then()
+                .statusCode(OK.value())
+                .body("$", hasSize(3))
+                .body("id", hasItem(userGameId.intValue()))
+                .body("id", hasItem(gameId.intValue()))
+                .body("id", hasItem(aiGameId.intValue()))
+                .body("id", not(hasItem(requestId.intValue())))
+                .body("id", not(hasItem(finishedId.intValue())))
+                .body("id", not(hasItem(aiFinishedId.intValue())))
+                .body("id", not(hasItem(rejectedId.intValue())));
     }
 
     private GameRequest getGameRequest(GameType type, String username) {
@@ -294,11 +351,27 @@ class GameControllerTest {
         return userRepository.save(user).getId();
     }
 
+    private Long createRequest(Long userId, Long opponentId) {
+        return createGame(userId, opponentId, false);
+    }
+
     private Long createGame(Long userId, Long opponentId) {
+        return createGame(userId, opponentId, true);
+    }
+
+    private Long createRejectedRequest(Long userId, Long opponentId) {
         return createGame(userId, opponentId, false);
     }
 
     private Long createGame(Long userId, Long opponentId, boolean accepted) {
+        return createGame(userId, opponentId, accepted, false, false);
+    }
+
+    private Long createFinishedGame(Long userId, Long opponentId) {
+        return createGame(userId, opponentId, true, false, true);
+    }
+
+    private Long createGame(Long userId, Long opponentId, boolean accepted, boolean rejected, boolean finished) {
         Game game = new Game();
         game.setUser(userRepository.getReferenceById(userId));
         game.setOpponent(userRepository.getReferenceById(opponentId));
@@ -307,10 +380,20 @@ class GameControllerTest {
         game.setCurrentSymbol(GameSymbol.X);
         game.setUserStarts(true);
         game.setAccepted(accepted);
+        game.setRejected(rejected);
+        game.setFinished(finished);
         return gameRepository.save(game).getId();
     }
 
     private Long createGame() {
+        return createGame(false);
+    }
+
+    private Long createFinishedGame() {
+        return createGame(true);
+    }
+
+    private Long createGame(boolean finished) {
         Game game = new Game();
         game.setUser(userRepository.getReferenceById(userId));
         game.setCurrentState("?????????");
@@ -318,6 +401,7 @@ class GameControllerTest {
         game.setCurrentSymbol(GameSymbol.X);
         game.setUserStarts(true);
         game.setAccepted(true);
+        game.setFinished(finished);
         return gameRepository.save(game).getId();
     }
 }
