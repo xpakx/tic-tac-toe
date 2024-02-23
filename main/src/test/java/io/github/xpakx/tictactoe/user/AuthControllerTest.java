@@ -5,6 +5,9 @@ import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -16,7 +19,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -48,7 +54,7 @@ class AuthControllerTest {
         baseUrl = "http://localhost".concat(":").concat(String.valueOf(port));
         User user = new User();
         user.setPassword(passwordEncoder.encode("password"));
-        user.setUsername("Test");
+        user.setUsername("test_user");
         userId = userRepository.save(user).getId();
     }
 
@@ -56,5 +62,87 @@ class AuthControllerTest {
     void tearDown() {
         roleRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    @Test
+    void usernameShouldBeUnique() {
+        RegistrationRequest request = getRegRequest("test_user", "password", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase("username exists"));
+    }
+
+    @Test
+    void passwordsShouldMatch() {
+        RegistrationRequest request = getRegRequest("new_user", "password", "password2");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase(("validation failed")))
+                .body("errors", hasItem(containsStringIgnoringCase("passwords don't match")));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", " ", "\t", "\n"})
+    void usernameCannotBeEmpty(String username) {
+        RegistrationRequest request = getRegRequest(username, "password", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase(("validation failed")))
+                .body("errors", hasItem(containsStringIgnoringCase("username cannot be empty")));
+
+    }
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "test", "too_long_username"})
+    void usernameMustBeOfCorrectLength(String username) {
+        RegistrationRequest request = getRegRequest(username, "password", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase(("validation failed")))
+                .body("errors", hasItem(containsStringIgnoringCase("between 5 and 15")));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", " ", "\t", "\n"})
+    void passwordCannotBeEmpty(String password) {
+        RegistrationRequest request = getRegRequest("new_user", password, password);
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase(("validation failed")))
+                .body("errors", hasItem(containsStringIgnoringCase("password cannot be empty")));
+    }
+
+    private RegistrationRequest getRegRequest(String username, String password, String password2) {
+        RegistrationRequest request = new RegistrationRequest();
+        request.setUsername(username);
+        request.setPassword(password);
+        request.setPasswordRe(password2);
+        return request;
     }
 }
