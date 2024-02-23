@@ -6,6 +6,7 @@ import io.github.xpakx.tictactoe.game.dto.GameSummary;
 import io.github.xpakx.tictactoe.game.dto.NewGameResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,8 +20,9 @@ public class GameController {
 
     @PostMapping("/game")
     public ResponseEntity<NewGameResponse> newGame(@Valid @RequestBody GameRequest request, Principal principal) {
-        return ResponseEntity.ok(
-                service.newGame(principal.getName(), request)
+        return new ResponseEntity<>(
+                service.newGame(principal.getName(), request),
+                HttpStatus.CREATED
         );
     }
 
