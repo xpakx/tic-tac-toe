@@ -31,6 +31,7 @@ struct EngineEvent {
     finished: bool,
     won: bool,
     drawn: bool,
+    malformed: Option<bool>,
 }
 
 pub async fn consumer() -> Result<(), lapin::Error> {
@@ -166,7 +167,8 @@ impl Default for EngineEvent {
             legal: false,
             finished: false,
             won: false,
-            drawn: false 
+            drawn: false,
+            malformed: None,
         } 
     } 
 }
@@ -177,6 +179,7 @@ fn process_event(game_msg: &GameMessage) -> EngineEvent {
         println!("Malformed board!");
         return EngineEvent {
             game_id: game_msg.game_id, 
+            malformed: Some(true),
             ..Default::default()
         };
     };
@@ -197,6 +200,7 @@ fn process_event(game_msg: &GameMessage) -> EngineEvent {
                 println!("Row should be present for user move");
                 return EngineEvent {
                     game_id: game_msg.game_id, 
+                    malformed: Some(true),
                     ..Default::default()
                 };
             };
@@ -204,6 +208,7 @@ fn process_event(game_msg: &GameMessage) -> EngineEvent {
                 println!("Column should be present for user move");
                 return EngineEvent {
                     game_id: game_msg.game_id, 
+                    malformed: Some(true),
                     ..Default::default()
                 };
             };
@@ -213,6 +218,7 @@ fn process_event(game_msg: &GameMessage) -> EngineEvent {
                 println!("Malformed move!");
                 return EngineEvent {
                     game_id: game_msg.game_id, 
+                    malformed: Some(true),
                     ..Default::default()
                 };
             };
@@ -264,6 +270,7 @@ fn process_event(game_msg: &GameMessage) -> EngineEvent {
                 finished: won || drawn,
                 won,
                 drawn,
+                malformed: None,
             }
         },
         false => {
@@ -283,6 +290,7 @@ fn process_event(game_msg: &GameMessage) -> EngineEvent {
                 finished: false,
                 won: false,
                 drawn: false,
+                malformed: None,
             }
         }
     }
