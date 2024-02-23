@@ -20,9 +20,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CREATED;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -136,6 +138,21 @@ class AuthControllerTest {
                 .statusCode(BAD_REQUEST.value())
                 .body("message", containsStringIgnoringCase(("validation failed")))
                 .body("errors", hasItem(containsStringIgnoringCase("password cannot be empty")));
+    }
+
+    @Test
+    void shouldRegisterNewUser() {
+        RegistrationRequest request = getRegRequest("new_user", "password", "password");
+        given()
+                .contentType(ContentType.JSON)
+                .body(request)
+                .when()
+                .post(baseUrl + "/register")
+                .then()
+                .statusCode(CREATED.value());
+        assertThat(userRepository.count(), equalTo(2L));
+        var users = userRepository.findAll();
+        assertThat(users, hasItem(hasProperty("username", equalTo("new_user"))));
     }
 
     private RegistrationRequest getRegRequest(String username, String password, String password2) {
