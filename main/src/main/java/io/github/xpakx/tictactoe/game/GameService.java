@@ -4,6 +4,7 @@ import io.github.xpakx.tictactoe.game.dto.*;
 import io.github.xpakx.tictactoe.game.error.GameNotFoundException;
 import io.github.xpakx.tictactoe.game.error.RequestProcessedException;
 import io.github.xpakx.tictactoe.game.error.UnauthorizedGameRequestChangeException;
+import io.github.xpakx.tictactoe.game.error.UserNotFoundException;
 import io.github.xpakx.tictactoe.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class GameService {
 
     private Game newGameAgainstUser(String username, String opponent) {
         var newGame = new Game();
-        newGame.setUser(userRepository.findByUsername(username).orElseThrow());
+        newGame.setUser(userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new));
         newGame.setCurrentState("?????????");
         newGame.setType(GameType.USER);
         newGame.setOpponent(userRepository.findByUsername(opponent).orElseThrow());
@@ -42,7 +43,7 @@ public class GameService {
 
     private Game newGameAgainstAI(String username) {
         var newGame = new Game();
-        newGame.setUser(userRepository.findByUsername(username).orElseThrow());
+        newGame.setUser(userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new));
         newGame.setCurrentState("?????????");
         newGame.setType(GameType.AI);
         newGame.setAccepted(true);
