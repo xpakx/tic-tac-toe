@@ -74,7 +74,7 @@ public class GameService {
     public List<GameSummary> getOldGames(String username) {
         return gameRepository.findFinishedGames(
                 userRepository.findByUsername(username)
-                        .orElseThrow()
+                        .orElseThrow(UserNotFoundException::new)
                         .getId()
                 ).stream()
                 .map(GameSummary::of).toList();

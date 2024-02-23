@@ -323,6 +323,64 @@ class GameControllerTest {
                 .body("id", not(hasItem(rejectedId.intValue())));
     }
 
+    @Test
+    void unauthorizedUserShouldNotBeAbleToViewArchive() {
+        given()
+                .when()
+                .get(baseUrl + "/game/archive")
+                .then()
+                .statusCode(UNAUTHORIZED.value());
+    }
+
+    @Test
+    void userGettingArchiveShouldExist() {
+        given()
+                .header(getHeaderForUser("new_user"))
+                .when()
+                .get(baseUrl + "/game/archive")
+                .then()
+                .statusCode(NOT_FOUND.value())
+                .body("message", containsStringIgnoringCase("user not found"));
+    }
+
+    @Test
+    void shouldRespondWithEmptyListOfArchive() {
+        given()
+                .header(getHeaderForUser("test_user"))
+                .when()
+                .get(baseUrl + "/game/archive")
+                .then()
+                .statusCode(OK.value())
+                .body("$", hasSize(0));
+    }
+
+    @Test
+    void shouldRespondWithUserArchive() {
+        var otherId = createUser("new_user");
+        var userGameId = createGame(userId, otherId);
+        var gameId = createGame(otherId, userId);
+        var aiGameId = createGame();
+
+        var requestId = createRequest(otherId, userId);
+        var rejectedId = createRejectedRequest(otherId, userId);
+        var finishedId = createFinishedGame(userId, otherId);
+        var aiFinishedId = createFinishedGame();
+        given()
+                .header(getHeaderForUser("test_user"))
+                .when()
+                .get(baseUrl + "/game/archive")
+                .then()
+                .statusCode(OK.value())
+                .body("$", hasSize(2))
+                .body("id", not(hasItem(userGameId.intValue())))
+                .body("id", not(hasItem(gameId.intValue())))
+                .body("id", not(hasItem(aiGameId.intValue())))
+                .body("id", not(hasItem(requestId.intValue())))
+                .body("id", hasItem(finishedId.intValue()))
+                .body("id", hasItem(aiFinishedId.intValue()))
+                .body("id", not(hasItem(rejectedId.intValue())));
+    }
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);
