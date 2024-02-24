@@ -408,6 +408,39 @@ class GameControllerTest {
                 .body("message", containsStringIgnoringCase("cannot change this request"));
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldNotChangeAlreadyAcceptedRequest(boolean accepted) {
+        var otherId = createUser("new_user");
+        var requestId = createGame(otherId, userId, true);
+        given()
+                .header(getHeaderForUser("test_user"))
+                .contentType(ContentType.JSON)
+                .body(getAcceptRequest(accepted))
+                .when()
+                .post(baseUrl + "/game/{gameId}/request", requestId)
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase("request already accepted"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldNotChangeAlreadyRejectedRequest(boolean accepted) {
+        var otherId = createUser("new_user");
+        var requestId = createRejectedRequest(otherId, userId);
+        given()
+                .header(getHeaderForUser("test_user"))
+                .contentType(ContentType.JSON)
+                .body(getAcceptRequest(accepted))
+                .when()
+                .post(baseUrl + "/game/{gameId}/request", requestId)
+                .then()
+                .statusCode(BAD_REQUEST.value())
+                .body("message", containsStringIgnoringCase("request already rejected"));
+    }
+
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);
@@ -445,7 +478,7 @@ class GameControllerTest {
     }
 
     private Long createRejectedRequest(Long userId, Long opponentId) {
-        return createGame(userId, opponentId, false);
+        return createGame(userId, opponentId, false, true, false);
     }
 
     private Long createGame(Long userId, Long opponentId, boolean accepted) {
