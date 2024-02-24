@@ -15,6 +15,7 @@ import org.mockito.Spy;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -55,13 +56,14 @@ class GameEventHandlerTest {
     @Autowired
     RabbitTemplate rabbitTemplate;
 
-    @Mock
+    @SpyBean
     GameEventHandler gameHandler;
 
     Long userId;
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         User user = new User();
         user.setPassword("password");
         user.setUsername("test_user");
@@ -89,11 +91,9 @@ class GameEventHandlerTest {
 
     @Test
     public void testCallingGameHandler() {
-        MockitoAnnotations.openMocks(this);
         var game = new GameEvent();
         game.setGameId(5L);
         rabbitTemplate.convertAndSend("tictactoe.games.topic", "game", game);
-        gameHandler.handleGame(game);
         await()
                 .atMost(5, TimeUnit.SECONDS)
                 .until(isMessageConsumed(), Matchers.is(true));
