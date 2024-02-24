@@ -1,5 +1,6 @@
 package io.github.xpakx.tictactoe.game;
 
+import io.github.xpakx.tictactoe.game.dto.AcceptRequest;
 import io.github.xpakx.tictactoe.game.dto.GameRequest;
 import io.github.xpakx.tictactoe.security.JwtUtils;
 import io.github.xpakx.tictactoe.user.User;
@@ -381,6 +382,32 @@ class GameControllerTest {
                 .body("id", not(hasItem(rejectedId.intValue())));
     }
 
+    @Test
+    void unauthorizedUserShouldNotBeAbleToAcceptRequest() {
+        given()
+                .contentType(ContentType.JSON)
+                .body(getAcceptRequest(true))
+                .when()
+                .post(baseUrl + "/game/1/request")
+                .then()
+                .statusCode(UNAUTHORIZED.value());
+    }
+
+    @Test
+    void userShouldNotBeAbleToAcceptRequestSentToOtherUser() {
+        var otherId = createUser("new_user");
+        var requestId = createRequest(userId, otherId);
+        given()
+                .header(getHeaderForUser("test_user"))
+                .contentType(ContentType.JSON)
+                .body(getAcceptRequest(true))
+                .when()
+                .post(baseUrl + "/game/{gameId}/request", requestId)
+                .then()
+                .statusCode(FORBIDDEN.value())
+                .body("message", containsStringIgnoringCase("cannot change this request"));
+    }
+
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
         request.setOpponent(username);
@@ -461,5 +488,11 @@ class GameControllerTest {
         game.setAccepted(true);
         game.setFinished(finished);
         return gameRepository.save(game).getId();
+    }
+
+    private AcceptRequest getAcceptRequest(boolean accepted) {
+        var request = new AcceptRequest();
+        request.setAccepted(accepted);
+        return request;
     }
 }
