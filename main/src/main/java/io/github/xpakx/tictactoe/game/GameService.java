@@ -81,7 +81,7 @@ public class GameService {
     }
 
     public boolean acceptRequest(String username, Long requestId, AcceptRequest decision) {
-        var game = gameRepository.findById(requestId)
+        var game = gameRepository.findWithOpponentById(requestId)
                 .orElseThrow(GameNotFoundException::new);
         if (game.isAccepted() || game.isRejected()) {
             throw new RequestProcessedException(

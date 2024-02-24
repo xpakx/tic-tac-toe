@@ -32,4 +32,7 @@ public interface GameRepository extends JpaRepository<Game, Long> {
 
     @EntityGraph(attributePaths = {"user", "opponent"})
     Optional<Game> findWithUsersById(Long id);
+
+    @EntityGraph(attributePaths = {"opponent"})
+    Optional<Game> findWithOpponentById(Long id);
 }
