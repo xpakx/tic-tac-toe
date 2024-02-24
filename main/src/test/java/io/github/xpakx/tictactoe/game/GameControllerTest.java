@@ -440,6 +440,44 @@ class GameControllerTest {
                 .body("message", containsStringIgnoringCase("request already rejected"));
     }
 
+    @Test
+    void shouldRejectGameRequest() {
+        var otherId = createUser("new_user");
+        var requestId = createRequest(otherId, userId);
+        given()
+                .header(getHeaderForUser("test_user"))
+                .contentType(ContentType.JSON)
+                .body(getAcceptRequest(false))
+                .when()
+                .post(baseUrl + "/game/{gameId}/request", requestId)
+                .then()
+                .statusCode(OK.value());
+        var gameOpt = gameRepository.findById(requestId);
+        assert(gameOpt.isPresent());
+        var game = gameOpt.get();
+        assertThat(game.isAccepted(), is(false));
+        assertThat(game.isRejected(), is(true));
+    }
+
+    @Test
+    void shouldAcceptGameRequest() {
+        var otherId = createUser("new_user");
+        var requestId = createRequest(otherId, userId);
+        given()
+                .header(getHeaderForUser("test_user"))
+                .contentType(ContentType.JSON)
+                .body(getAcceptRequest(true))
+                .when()
+                .post(baseUrl + "/game/{gameId}/request", requestId)
+                .then()
+                .statusCode(OK.value());
+        var gameOpt = gameRepository.findById(requestId);
+        assert(gameOpt.isPresent());
+        var game = gameOpt.get();
+        assertThat(game.isAccepted(), is(true));
+        assertThat(game.isRejected(), is(false));
+    }
+
 
     private GameRequest getGameRequest(GameType type, String username) {
         var request = new GameRequest();
