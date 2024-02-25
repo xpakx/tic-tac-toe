@@ -27,6 +27,10 @@ public class StatePublisher {
             event.setError(true);
             event.setErrorMessage("Game is already finished!");
         }
+        if (!game.isAccepted()) {
+            event.setError(true);
+            event.setErrorMessage("Game is not accepted!");
+        }
         event.setUsername1(game.getUser().getUsername());
         if (game.getOpponent() != null) {
             event.setUsername2(game.getOpponent().getUsername());
