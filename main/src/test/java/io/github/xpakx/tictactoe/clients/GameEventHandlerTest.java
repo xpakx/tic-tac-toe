@@ -1,7 +1,6 @@
 package io.github.xpakx.tictactoe.clients;
 
 import io.github.xpakx.tictactoe.clients.event.GameEvent;
-import io.github.xpakx.tictactoe.game.Game;
 import io.github.xpakx.tictactoe.game.GameRepository;
 import io.github.xpakx.tictactoe.user.User;
 import io.github.xpakx.tictactoe.user.UserRepository;
@@ -9,9 +8,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @Testcontainers
@@ -56,6 +53,9 @@ class GameEventHandlerTest {
     @Autowired
     RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    RabbitAdmin rabbitAdmin;
+
     @SpyBean
     GameEventHandler gameHandler;
 
@@ -75,6 +75,8 @@ class GameEventHandlerTest {
     void tearDown() {
         gameRepository.deleteAll();
         userRepository.deleteAll();
+        rabbitAdmin.purgeQueue("tictactoe.games.queue");
+        reset(gameHandler);
     }
 
     @DynamicPropertySource
