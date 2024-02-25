@@ -1,6 +1,7 @@
 package io.github.xpakx.tictactoe.clients;
 
 import io.github.xpakx.tictactoe.clients.event.GameEvent;
+import io.github.xpakx.tictactoe.clients.event.StateEvent;
 import io.github.xpakx.tictactoe.game.GameRepository;
 import io.github.xpakx.tictactoe.user.User;
 import io.github.xpakx.tictactoe.user.UserRepository;
@@ -21,11 +22,16 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -133,6 +139,21 @@ class GameEventHandlerTest {
                 .until(isQueueNotEmpty("test.queue"), Matchers.is(true));
     }
 
+    @Test
+    public void shouldPublishErrorForNonExistentGame() {
+        var game = new GameEvent();
+        game.setGameId(5L);
+        rabbitTemplate.convertAndSend("tictactoe.games.topic", "game", game);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(isQueueNotEmpty("test.queue"), Matchers.is(true));
+        var msg = getMessage("test.queue");
+        assert(msg.isPresent());
+        var event = msg.get();
+        assertThat(event.isError(), is(true));
+        assertThat(event.getErrorMessage(), containsStringIgnoringCase("no such game"));
+    }
+
     private Callable<Boolean> isMessageConsumed() {
         return () ->
             mockingDetails(gameHandler).getInvocations().stream()
@@ -150,5 +171,17 @@ class GameEventHandlerTest {
 
     private Callable<Boolean> isQueueNotEmpty(String queueName) {
         return () -> getMessageCount(queueName) > 0;
+    }
+
+    private Optional<StateEvent> getMessage(String queueName) {
+        var queuedMessage = rabbitTemplate.receiveAndConvert(queueName);
+        System.out.println(queuedMessage);
+        if (Objects.isNull(queuedMessage)) {
+            return Optional.empty();
+        }
+        if (queuedMessage instanceof StateEvent e) {
+            return Optional.of(e);
+        }
+        return Optional.empty();
     }
 }
