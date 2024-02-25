@@ -2,7 +2,10 @@ package io.github.xpakx.tictactoe.clients;
 
 import io.github.xpakx.tictactoe.clients.event.GameEvent;
 import io.github.xpakx.tictactoe.clients.event.StateEvent;
+import io.github.xpakx.tictactoe.game.Game;
 import io.github.xpakx.tictactoe.game.GameRepository;
+import io.github.xpakx.tictactoe.game.GameSymbol;
+import io.github.xpakx.tictactoe.game.GameType;
 import io.github.xpakx.tictactoe.user.User;
 import io.github.xpakx.tictactoe.user.UserRepository;
 import org.hamcrest.Matchers;
@@ -30,8 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsStringIgnoringCase;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -154,6 +156,27 @@ class GameEventHandlerTest {
         assertThat(event.getErrorMessage(), containsStringIgnoringCase("no such game"));
     }
 
+    @Test
+    public void shouldPublishErrorForNonAcceptedGame() {
+        var user1Id = createUser("user1");
+        var user2Id = createUser("user2");
+        var gameId = createGame(user1Id, user2Id, false, false);
+        var game = new GameEvent();
+        game.setGameId(gameId);
+        rabbitTemplate.convertAndSend("tictactoe.games.topic", "game", game);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(isQueueNotEmpty("test.queue"), Matchers.is(true));
+        var msg = getMessage("test.queue");
+        assert(msg.isPresent());
+        var event = msg.get();
+        assertThat(event.getUsername1(), equalTo("user1"));
+        assertThat(event.getUsername2(), equalTo("user2"));
+        assertThat(event.getId(), equalTo(gameId));
+        assertThat(event.isError(), is(true));
+        assertThat(event.getErrorMessage(), containsStringIgnoringCase("not accepted"));
+    }
+
     private Callable<Boolean> isMessageConsumed() {
         return () ->
             mockingDetails(gameHandler).getInvocations().stream()
@@ -183,5 +206,25 @@ class GameEventHandlerTest {
             return Optional.of(e);
         }
         return Optional.empty();
+    }
+
+    private Long createUser(String username) {
+        User user = new User();
+        user.setPassword("password");
+        user.setUsername(username);
+        return userRepository.save(user).getId();
+    }
+
+    private Long createGame(Long userId, Long opponentId, boolean accepted, boolean finished) {
+        Game game = new Game();
+        game.setUser(userRepository.getReferenceById(userId));
+        game.setOpponent(userRepository.getReferenceById(opponentId));
+        game.setCurrentState("?????????");
+        game.setType(GameType.USER);
+        game.setCurrentSymbol(GameSymbol.X);
+        game.setUserStarts(true);
+        game.setAccepted(accepted);
+        game.setFinished(finished);
+        return gameRepository.save(game).getId();
     }
 }
