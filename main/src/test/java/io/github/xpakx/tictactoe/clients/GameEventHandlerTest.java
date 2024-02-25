@@ -177,6 +177,27 @@ class GameEventHandlerTest {
         assertThat(event.getErrorMessage(), containsStringIgnoringCase("not accepted"));
     }
 
+    @Test
+    public void shouldPublishErrorForFinishedGame() {
+        var user1Id = createUser("user1");
+        var user2Id = createUser("user2");
+        var gameId = createGame(user1Id, user2Id, true, true);
+        var game = new GameEvent();
+        game.setGameId(gameId);
+        rabbitTemplate.convertAndSend("tictactoe.games.topic", "game", game);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(isQueueNotEmpty("test.queue"), Matchers.is(true));
+        var msg = getMessage("test.queue");
+        assert(msg.isPresent());
+        var event = msg.get();
+        assertThat(event.getUsername1(), equalTo("user1"));
+        assertThat(event.getUsername2(), equalTo("user2"));
+        assertThat(event.getId(), equalTo(gameId));
+        assertThat(event.isError(), is(true));
+        assertThat(event.getErrorMessage(), containsStringIgnoringCase("already finished"));
+    }
+
     private Callable<Boolean> isMessageConsumed() {
         return () ->
             mockingDetails(gameHandler).getInvocations().stream()
