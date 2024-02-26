@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -38,12 +41,14 @@ class GameControllerTest {
 
     @Test
     void shouldConnectToWebsocket() throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
         StompSession session = stompClient
-                .connectAsync(baseUrl + "/play/websocket", new SessionHandler(latch))
+                .connectAsync(baseUrl + "/play/websocket", new StompSessionHandlerAdapter() {})
                 .get(1, SECONDS);
-        latch.await();
-        assert(session.isConnected());
+        await()
+                .atMost(1, SECONDS)
+                .untilAsserted(() -> {
+                    assertThat(session.isConnected(), equalTo(true));
+                });
     }
 
     private static class SessionHandler extends StompSessionHandlerAdapter {
