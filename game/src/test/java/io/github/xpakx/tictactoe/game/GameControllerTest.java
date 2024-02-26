@@ -1,18 +1,22 @@
 package io.github.xpakx.tictactoe.game;
 
+import io.github.xpakx.tictactoe.game.dto.ChatMessage;
+import io.github.xpakx.tictactoe.game.dto.ChatRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.StompHeaders;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.stomp.*;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
+import java.lang.reflect.Type;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -29,6 +33,9 @@ class GameControllerTest {
     private String baseUrl;
 
     WebSocketStompClient stompClient;
+
+    @Autowired
+    SimpMessagingTemplate simpMessagingTemplate;
 
     @BeforeEach
     void setUp() {
@@ -51,17 +58,32 @@ class GameControllerTest {
                 });
     }
 
-    private static class SessionHandler extends StompSessionHandlerAdapter {
-        private final CountDownLatch latch;
+    @Test
+    void shouldSubscribeChat() throws Exception {
+        StompSession session = stompClient
+                .connectAsync(baseUrl + "/play/websocket", new StompSessionHandlerAdapter() {})
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        CountDownLatch latch = new CountDownLatch(1);
+        session.subscribe("/topic/chat/1", new StompFrameHandler() {
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return ChatMessage.class;
+            }
 
-        public SessionHandler(final CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void afterConnected(StompSession session,
-                                   StompHeaders connectedHeaders) {
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
                 latch.countDown();
-        }
+            }
+        });
+        var msg = new ChatRequest();
+        msg.setMessage("Message");
+        Thread.sleep(1000);
+        simpMessagingTemplate.convertAndSend("/topic/chat/1",  msg);
+        await()
+                .atMost(1, SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
     }
 }
