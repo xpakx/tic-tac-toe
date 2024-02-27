@@ -2,14 +2,19 @@ package io.github.xpakx.tictactoe.game;
 
 import io.github.xpakx.tictactoe.game.dto.ChatMessage;
 import io.github.xpakx.tictactoe.game.dto.ChatRequest;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.*;
+import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -17,6 +22,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import java.lang.reflect.Type;
 import java.nio.file.attribute.UserPrincipal;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -37,6 +43,9 @@ class GameControllerTest {
     WebSocketStompClient stompClient;
 
     private CompletableFuture<ChatMessage> completableMessage;
+
+    @Value("${jwt.secret}")
+    String secret;
 
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
@@ -86,7 +95,6 @@ class GameControllerTest {
         assertThat(chatMessage.getPlayer(), equalTo("Guest"));
     }
 
-
     @Test
     void shouldSendChatMessageByGuestUser() throws Exception {
         StompSession session = stompClient
@@ -99,7 +107,7 @@ class GameControllerTest {
         session.subscribe("/topic/chat/1", new FrameHandler(latch));
         var msg = new ChatRequest();
         msg.setMessage("Message");
-        session.send("/topic/chat/1", msg);
+        session.send("/app/chat/1", msg);
         await()
                 .atMost(1, SECONDS)
                 .untilAsserted(() -> assertEquals(0, latch.getCount()));
@@ -107,6 +115,34 @@ class GameControllerTest {
         assertThat(chatMessage, notNullValue());
         assertThat(chatMessage.getMessage(), equalTo("Message"));
         assertThat(chatMessage.getPlayer(), equalTo("guest"));
+    }
+    @Test
+    void shouldSendChatMessage() throws Exception {
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("test_user"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        CountDownLatch latch = new CountDownLatch(1);
+        session.subscribe("/topic/chat/1", new FrameHandler(latch));
+        var msg = new ChatRequest();
+        msg.setMessage("Message");
+        session.send("/app/chat/1", msg);
+        await()
+                .atMost(1, SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        ChatMessage chatMessage = completableMessage.get(1, SECONDS);
+        assertThat(chatMessage, notNullValue());
+        assertThat(chatMessage.getMessage(), equalTo("Message"));
+        assertThat(chatMessage.getPlayer(), equalTo("test_user"));
     }
 
     private class FrameHandler implements StompFrameHandler {
@@ -127,4 +163,20 @@ class GameControllerTest {
             }
 
         }
+
+
+    public String generateToken(String username) {
+        Claims claims = Jwts.claims().setSubject(username);
+        claims.put(
+                "roles",
+                List.of()
+        );
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 60 * 1000))
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
 }
