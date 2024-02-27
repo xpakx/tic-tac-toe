@@ -30,7 +30,12 @@ public class GameController {
     @SendTo("/topic/chat/{id}")
     public ChatMessage chat(@DestinationVariable Long id, ChatRequest request, Principal principal) {
         var msg = new ChatMessage();
-        msg.setPlayer(principal.getName());
+        var username = "guest";
+        if (principal != null && principal.getName() != null) {
+            username = principal.getName();
+
+        }
+        msg.setPlayer(username);
         msg.setMessage(request.getMessage());
         return msg;
     }
