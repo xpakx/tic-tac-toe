@@ -1,12 +1,19 @@
 package io.github.xpakx.tictactoe.game;
 
+import com.redis.testcontainers.RedisContainer;
 import io.github.xpakx.tictactoe.game.dto.ChatMessage;
 import io.github.xpakx.tictactoe.game.dto.ChatRequest;
+import io.github.xpakx.tictactoe.game.dto.GameMessage;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +21,17 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.*;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
-import org.springframework.web.socket.sockjs.client.SockJsClient;
-import org.springframework.web.socket.sockjs.client.WebSocketTransport;
+import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.lang.reflect.Type;
-import java.nio.file.attribute.UserPrincipal;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +45,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
 class GameControllerTest {
     @LocalServerPort
     private int port;
@@ -50,6 +61,55 @@ class GameControllerTest {
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
 
+
+    @Container
+    static RabbitMQContainer rabbitMq = new RabbitMQContainer(
+            DockerImageName.parse("rabbitmq:3.7.25-management-alpine")
+    );
+
+    @Container
+    static RedisContainer redis = new RedisContainer(
+            DockerImageName.parse("redis:6.2.6-alpine")
+    );
+
+    @Autowired
+    RabbitAdmin rabbitAdmin;
+
+    @Autowired
+    GameRepository gameRepository;
+
+    @DynamicPropertySource
+    static void props(DynamicPropertyRegistry registry) {
+        registry.add("spring.rabbitmq.username", rabbitMq::getAdminUsername);
+        registry.add("spring.rabbitmq.password", rabbitMq::getAdminPassword);
+        registry.add("spring.rabbitmq.host", rabbitMq::getHost);
+        registry.add("spring.rabbitmq.port", rabbitMq::getAmqpPort);
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getRedisPort);
+    }
+
+    private boolean rabbitSetupIsDone = false;
+
+    void config() {
+        var queue = new Queue("test.queue", true);
+        rabbitAdmin.declareQueue(queue);
+        var exchange = ExchangeBuilder
+                .topicExchange("tictactoe.games.topic")
+                .durable(true)
+                .build();
+        rabbitAdmin.declareExchange(exchange);
+        Binding binding = new Binding(
+                "test.queue",
+                Binding.DestinationType.QUEUE,
+                "tictactoe.games.topic",
+                "game",
+                null
+        );
+        rabbitAdmin.declareBinding(binding);
+        rabbitSetupIsDone = true;
+    }
+
     @BeforeEach
     void setUp() {
         baseUrl = "ws://localhost".concat(":").concat(String.valueOf(port));
@@ -58,6 +118,15 @@ class GameControllerTest {
         );
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
         completableMessage = new CompletableFuture<>();
+        if (!rabbitSetupIsDone) {
+            config();
+        }
+    }
+
+    @AfterEach
+    void tearDown() {
+        rabbitAdmin.purgeQueue("tictactoe.state.queue");
+        rabbitAdmin.purgeQueue("test.queue");
     }
 
     @Test
