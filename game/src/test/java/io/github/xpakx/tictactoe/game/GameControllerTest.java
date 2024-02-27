@@ -54,6 +54,7 @@ class GameControllerTest {
     WebSocketStompClient stompClient;
 
     private CompletableFuture<ChatMessage> completableMessage;
+    private CompletableFuture<GameMessage> completableGame;
 
     @Value("${jwt.secret}")
     String secret;
@@ -118,6 +119,7 @@ class GameControllerTest {
         );
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
         completableMessage = new CompletableFuture<>();
+        completableGame = new CompletableFuture<>();
         if (!rabbitSetupIsDone) {
             config();
         }
@@ -150,7 +152,7 @@ class GameControllerTest {
                 .atMost(1, SECONDS)
                 .until(session::isConnected);
         CountDownLatch latch = new CountDownLatch(1);
-        session.subscribe("/topic/chat/1", new FrameHandler(latch));
+        session.subscribe("/topic/chat/1", new ChatFrameHandler(latch));
         var msg = new ChatMessage();
         msg.setMessage("Message");
         msg.setPlayer("Guest");
@@ -173,7 +175,7 @@ class GameControllerTest {
                 .atMost(1, SECONDS)
                 .until(session::isConnected);
         CountDownLatch latch = new CountDownLatch(1);
-        session.subscribe("/topic/chat/1", new FrameHandler(latch));
+        session.subscribe("/topic/chat/1", new ChatFrameHandler(latch));
         var msg = new ChatRequest();
         msg.setMessage("Message");
         session.send("/app/chat/1", msg);
@@ -185,6 +187,7 @@ class GameControllerTest {
         assertThat(chatMessage.getMessage(), equalTo("Message"));
         assertThat(chatMessage.getPlayer(), equalTo("guest"));
     }
+
     @Test
     void shouldSendChatMessage() throws Exception {
         StompHeaders stompHeaders = new StompHeaders();
@@ -201,7 +204,7 @@ class GameControllerTest {
                 .atMost(1, SECONDS)
                 .until(session::isConnected);
         CountDownLatch latch = new CountDownLatch(1);
-        session.subscribe("/topic/chat/1", new FrameHandler(latch));
+        session.subscribe("/topic/chat/1", new ChatFrameHandler(latch));
         var msg = new ChatRequest();
         msg.setMessage("Message");
         session.send("/app/chat/1", msg);
@@ -214,24 +217,55 @@ class GameControllerTest {
         assertThat(chatMessage.getPlayer(), equalTo("test_user"));
     }
 
-    private class FrameHandler implements StompFrameHandler {
+    @Test
+    void shouldSendGameOnSubscription() throws Exception {
+        GameState game = new GameState();
+        game.setId(1L);
+        game.setUsername1("test_user");
+        game.setUsername2("user2");
+        game.setCurrentState("????X????");
+        gameRepository.save(game);
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("test_user"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        CountDownLatch latch = new CountDownLatch(1);
+        session.subscribe("/app/board/1", new BoardFrameHandler(latch));
+        await()
+                .atMost(1, SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        GameMessage gameMessage = completableGame.get(1, SECONDS);
+        assertThat(gameMessage, notNullValue());
+        assertThat(gameMessage.getUsername2(), equalTo("user2"));
+    }
+
+    private class ChatFrameHandler implements StompFrameHandler {
         private final CountDownLatch latch;
 
-        public FrameHandler(CountDownLatch latch) {
+        public ChatFrameHandler(CountDownLatch latch) {
             this.latch = latch;
         }
         @Override
-            public Type getPayloadType(StompHeaders headers) {
-                return ChatMessage.class;
-            }
-
-            @Override
-            public void handleFrame(StompHeaders headers, Object payload) {
-                completableMessage.complete((ChatMessage) payload);
-                latch.countDown();
-            }
-
+        public Type getPayloadType(StompHeaders headers) {
+            return ChatMessage.class;
         }
+
+        @Override
+        public void handleFrame(StompHeaders headers, Object payload) {
+            completableMessage.complete((ChatMessage) payload);
+            latch.countDown();
+        }
+
+    }
 
 
     public String generateToken(String username) {
@@ -247,5 +281,25 @@ class GameControllerTest {
                 .setExpiration(new Date(System.currentTimeMillis() + 60 * 1000))
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
+    }
+
+
+    private class BoardFrameHandler implements StompFrameHandler {
+        private final CountDownLatch latch;
+
+        public BoardFrameHandler(CountDownLatch latch) {
+            this.latch = latch;
+        }
+        @Override
+        public Type getPayloadType(StompHeaders headers) {
+            return GameMessage.class;
+        }
+
+        @Override
+        public void handleFrame(StompHeaders headers, Object payload) {
+            completableGame.complete((GameMessage) payload);
+            latch.countDown();
+        }
+
     }
 }
