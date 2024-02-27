@@ -1,5 +1,6 @@
 package io.github.xpakx.tictactoe.game.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.github.xpakx.tictactoe.game.GameState;
 import io.github.xpakx.tictactoe.game.GameSymbol;
 import lombok.Getter;
@@ -21,7 +22,8 @@ public class GameMessage {
     private String currentSymbol;
     private String currentPlayer;
 
-    private Optional<String> error;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String error;
 
 
     public static GameMessage of(GameState game) {

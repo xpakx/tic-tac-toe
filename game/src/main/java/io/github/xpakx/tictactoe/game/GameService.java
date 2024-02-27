@@ -113,7 +113,7 @@ public class GameService {
             // add dummy game to repo?
             gamePublisher.getGame(gameId);
             var msg = new GameMessage();
-            msg.setError(Optional.of("Loading game, please wait…"));
+            msg.setError("Loading game, please wait…");
             return msg;
         }
         var game = gameOpt.get();
@@ -123,13 +123,13 @@ public class GameService {
     public void loadGame(StateEvent event) {
         if (event.isError()) {
             var msg = new GameMessage();
-            msg.setError(Optional.of(event.getErrorMessage()));
+            msg.setError(event.getErrorMessage());
             simpMessagingTemplate.convertAndSend("/topic/board/" + event.getId(), msg);
             return;
         }
         if (event.isFinished()) {
             var msg = new GameMessage();
-            msg.setError(Optional.of("Game is already finished!"));
+            msg.setError("Game is already finished!");
             simpMessagingTemplate.convertAndSend("/topic/board/" + event.getId(), msg);
             return;
         }
