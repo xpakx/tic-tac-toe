@@ -18,12 +18,14 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import java.lang.reflect.Type;
 import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -33,6 +35,8 @@ class GameControllerTest {
     private String baseUrl;
 
     WebSocketStompClient stompClient;
+
+    private CompletableFuture<ChatMessage> completableMessage;
 
     @Autowired
     SimpMessagingTemplate simpMessagingTemplate;
@@ -44,6 +48,7 @@ class GameControllerTest {
                 new StandardWebSocketClient()
         );
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        completableMessage = new CompletableFuture<>();
     }
 
     @Test
@@ -67,23 +72,59 @@ class GameControllerTest {
                 .atMost(1, SECONDS)
                 .until(session::isConnected);
         CountDownLatch latch = new CountDownLatch(1);
-        session.subscribe("/topic/chat/1", new StompFrameHandler() {
-            @Override
+        session.subscribe("/topic/chat/1", new FrameHandler(latch));
+        var msg = new ChatMessage();
+        msg.setMessage("Message");
+        msg.setPlayer("Guest");
+        simpMessagingTemplate.convertAndSend("/topic/chat/1",  msg);
+        await()
+                .atMost(1, SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        ChatMessage chatMessage = completableMessage.get(1, SECONDS);
+        assertThat(chatMessage, notNullValue());
+        assertThat(chatMessage.getMessage(), equalTo("Message"));
+        assertThat(chatMessage.getPlayer(), equalTo("Guest"));
+    }
+
+
+    @Test
+    void shouldSendChatMessageByGuestUser() throws Exception {
+        StompSession session = stompClient
+                .connectAsync(baseUrl + "/play/websocket", new StompSessionHandlerAdapter() {})
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        CountDownLatch latch = new CountDownLatch(1);
+        session.subscribe("/topic/chat/1", new FrameHandler(latch));
+        var msg = new ChatRequest();
+        msg.setMessage("Message");
+        session.send("/topic/chat/1", msg);
+        await()
+                .atMost(1, SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        ChatMessage chatMessage = completableMessage.get(1, SECONDS);
+        assertThat(chatMessage, notNullValue());
+        assertThat(chatMessage.getMessage(), equalTo("Message"));
+        assertThat(chatMessage.getPlayer(), equalTo("guest"));
+    }
+
+    private class FrameHandler implements StompFrameHandler {
+        private final CountDownLatch latch;
+
+        public FrameHandler(CountDownLatch latch) {
+            this.latch = latch;
+        }
+        @Override
             public Type getPayloadType(StompHeaders headers) {
                 return ChatMessage.class;
             }
 
             @Override
             public void handleFrame(StompHeaders headers, Object payload) {
+                completableMessage.complete((ChatMessage) payload);
                 latch.countDown();
             }
-        });
-        var msg = new ChatRequest();
-        msg.setMessage("Message");
-        Thread.sleep(1000);
-        simpMessagingTemplate.convertAndSend("/topic/chat/1",  msg);
-        await()
-                .atMost(1, SECONDS)
-                .untilAsserted(() -> assertEquals(0, latch.getCount()));
-    }
+
+        }
 }
