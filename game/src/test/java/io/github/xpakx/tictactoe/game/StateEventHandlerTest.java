@@ -87,6 +87,20 @@ class StateEventHandlerTest {
         assertThat(game.getUsername2(), equalTo("user2"));
     }
 
+    @Test
+    void shouldNotSaveGameWithError() throws Exception {
+        var event = new StateEvent();
+        event.setId(5L);
+        event.setUsername1("user1");
+        event.setUsername2("user2");
+        event.setCurrentState("????X????");
+        event.setError(true);
+        event.setErrorMessage("Error");
+        rabbitTemplate.convertAndSend("tictactoe.state.topic", "state", event);
+        Thread.sleep(1000);
+        assertThat(getRedisRecordCount(), equalTo(0L));
+    }
+
     private Long getRedisRecordCount() {
         return gameRepository.count();
     }
