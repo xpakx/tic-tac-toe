@@ -340,6 +340,37 @@ class GameControllerTest {
         assertThat(gameMessage.getUsername2(), equalTo("user2"));
     }
 
+    @Test
+    void shouldSendErrorOnEventFromRabbitMq() throws Exception {
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("test_user"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        var latch = new CountDownLatch(1);
+        session.subscribe("/topic/board/5", new BoardFrameHandler(latch));
+        var event = new StateEvent();
+        event.setId(5L);
+        event.setError(true);
+        event.setErrorMessage("Error");
+        rabbitTemplate.convertAndSend("tictactoe.state.topic", "state", event);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        GameMessage gameMessage = completableGame.get(1, SECONDS);
+        assertThat(gameMessage, notNullValue());
+        assertThat(gameMessage.getError(), notNullValue());
+        assertThat(gameMessage.getError(), equalTo("Error"));
+    }
+
     private class ChatFrameHandler implements StompFrameHandler {
         private final CountDownLatch latch;
 
