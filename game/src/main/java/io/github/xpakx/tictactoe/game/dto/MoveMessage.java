@@ -1,12 +1,11 @@
 package io.github.xpakx.tictactoe.game.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.github.xpakx.tictactoe.game.GameSymbol;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.Optional;
 
 @Getter
 @Setter
@@ -19,12 +18,16 @@ public class MoveMessage {
     private boolean legal;
     private boolean applied;
     private String currentSymbol;
-    private Optional<String> message;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String message;
 
     private boolean finished;
     private boolean drawn;
     private boolean won;
-    private Optional<String> winner;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String winner;
 
     public static MoveMessage of(int x, int y, String username, GameSymbol symbol) {
         return new MoveMessage(
@@ -34,17 +37,17 @@ public class MoveMessage {
                 true,
                 true,
                 symbol.toString(),
-                Optional.empty(),
+                null,
                 false,
                 false,
                 false,
-                Optional.empty()
+                null
         );
     }
 
     public static MoveMessage rejected(int x, int y, String username, GameSymbol symbol, String msg) {
         var moveMessage = of(x, y, username, symbol);
-        moveMessage.setMessage(Optional.of(msg));
+        moveMessage.setMessage(msg);
         moveMessage.setLegal(false);
         moveMessage.setApplied(false);
         return moveMessage;

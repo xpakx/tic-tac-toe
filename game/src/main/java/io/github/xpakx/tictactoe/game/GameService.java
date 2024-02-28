@@ -92,7 +92,7 @@ public class GameService {
             msg.setFinished(true);
             msg.setDrawn(game.isDrawn());
             msg.setWon(game.isWon());
-            msg.setWinner(game.getWinner());
+            msg.setWinner(game.getWinner().orElse(null));
             statePublisher.publish(game);
             repository.deleteById(game.getId());
         } else {
