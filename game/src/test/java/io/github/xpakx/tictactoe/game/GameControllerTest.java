@@ -5,6 +5,7 @@ import io.github.xpakx.tictactoe.clients.event.GameEvent;
 import io.github.xpakx.tictactoe.game.dto.ChatMessage;
 import io.github.xpakx.tictactoe.game.dto.ChatRequest;
 import io.github.xpakx.tictactoe.game.dto.GameMessage;
+import io.github.xpakx.tictactoe.game.dto.StateEvent;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -304,6 +305,39 @@ class GameControllerTest {
         assert(msg.isPresent());
         var event = msg.get();
         assertThat(event.getGameId(), equalTo(5L));
+    }
+
+    @Test
+    void shouldSendBoardMessageOnEventFromRabbitMq() throws Exception {
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("test_user"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        var latch = new CountDownLatch(1);
+        session.subscribe("/topic/board/5", new BoardFrameHandler(latch));
+        var event = new StateEvent();
+        event.setId(5L);
+        event.setUsername1("user1");
+        event.setUsername2("user2");
+        event.setCurrentState("?????????");
+        rabbitTemplate.convertAndSend("tictactoe.state.topic", "state", event);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        GameMessage gameMessage = completableGame.get(1, SECONDS);
+        assertThat(gameMessage, notNullValue());
+        assertThat(gameMessage.getError(), nullValue());
+        assertThat(gameMessage.getUsername1(), equalTo("user1"));
+        assertThat(gameMessage.getUsername2(), equalTo("user2"));
     }
 
     private class ChatFrameHandler implements StompFrameHandler {
