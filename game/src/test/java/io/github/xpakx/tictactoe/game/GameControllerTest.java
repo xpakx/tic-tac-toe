@@ -2,10 +2,7 @@ package io.github.xpakx.tictactoe.game;
 
 import com.redis.testcontainers.RedisContainer;
 import io.github.xpakx.tictactoe.clients.event.GameEvent;
-import io.github.xpakx.tictactoe.game.dto.ChatMessage;
-import io.github.xpakx.tictactoe.game.dto.ChatRequest;
-import io.github.xpakx.tictactoe.game.dto.GameMessage;
-import io.github.xpakx.tictactoe.game.dto.StateEvent;
+import io.github.xpakx.tictactoe.game.dto.*;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -59,6 +56,7 @@ class GameControllerTest {
 
     private CompletableFuture<ChatMessage> completableMessage;
     private CompletableFuture<GameMessage> completableGame;
+    private CompletableFuture<MoveMessage> completableMove;
 
     @Value("${jwt.secret}")
     String secret;
@@ -126,6 +124,7 @@ class GameControllerTest {
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
         completableMessage = new CompletableFuture<>();
         completableGame = new CompletableFuture<>();
+        completableMove = new CompletableFuture<>();
         if (!rabbitSetupIsDone) {
             config();
         }
@@ -398,6 +397,45 @@ class GameControllerTest {
         assertThat(completableGame.isDone(), is(false));
     }
 
+    @Test
+    void shouldNotApplyMovesByUserNotInGame() throws Exception {
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("test_user"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        var latch = new CountDownLatch(1);
+        session.subscribe("/topic/game/5", new MoveFrameHandler(latch));
+        Thread.sleep(100);
+        var game = new GameState();
+        game.setUsername1("user1");
+        game.setUsername2("user2");
+        game.setId(5L);
+        game.setCurrentState("?????????");
+        game.setCurrentSymbol(GameSymbol.X);
+        gameRepository.save(game);
+        var msg = new MoveRequest();
+        msg.setX(0);
+        msg.setY(0);
+        session.send("/app/move/5", msg);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        MoveMessage moveMessage = completableMove.get(1, SECONDS);
+        assertThat(moveMessage, notNullValue());
+        assertThat(moveMessage.isApplied(), is(false));
+        assertThat(moveMessage.isLegal(), is(false));
+        assertThat(moveMessage.getMessage(), containsStringIgnoringCase("cannot move"));
+    }
+
     private class ChatFrameHandler implements StompFrameHandler {
         private final CountDownLatch latch;
 
@@ -475,5 +513,26 @@ class GameControllerTest {
             return Optional.of(e);
         }
         return Optional.empty();
+    }
+
+
+
+    private class MoveFrameHandler implements StompFrameHandler {
+        private final CountDownLatch latch;
+
+        public MoveFrameHandler(CountDownLatch latch) {
+            this.latch = latch;
+        }
+        @Override
+        public Type getPayloadType(StompHeaders headers) {
+            return MoveMessage.class;
+        }
+
+        @Override
+        public void handleFrame(StompHeaders headers, Object payload) {
+            completableMove.complete((MoveMessage) payload);
+            latch.countDown();
+        }
+
     }
 }
