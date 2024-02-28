@@ -371,6 +371,33 @@ class GameControllerTest {
         assertThat(gameMessage.getError(), equalTo("Error"));
     }
 
+    @Test
+    void shouldNotSendEventsAboutOtherGames() throws Exception {
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("test_user"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        var latch = new CountDownLatch(1);
+        session.subscribe("/topic/board/5", new BoardFrameHandler(latch));
+        var event = new StateEvent();
+        event.setId(1L);
+        event.setUsername1("user1");
+        event.setUsername2("user2");
+        event.setCurrentState("?????????");
+        rabbitTemplate.convertAndSend("tictactoe.state.topic", "state", event);
+        Thread.sleep(1000);
+        assertThat(completableGame.isDone(), is(false));
+    }
+
     private class ChatFrameHandler implements StompFrameHandler {
         private final CountDownLatch latch;
 
