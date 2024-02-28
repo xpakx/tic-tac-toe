@@ -34,8 +34,8 @@ struct EngineEvent {
     malformed: Option<bool>,
 }
 
-pub async fn consumer() -> Result<(), lapin::Error> {
-    let rabbit_uri = "amqp://guest:guest@localhost:5672";
+pub async fn consumer(rabbit_uri: &str) -> Result<(), lapin::Error> {
+    println!("{}", rabbit_uri);
     let conn = Connection::connect(&rabbit_uri, ConnectionProperties::default())
         .await
         .expect("Cannot connect to rabbitmq");
