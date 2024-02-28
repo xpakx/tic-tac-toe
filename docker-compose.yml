@@ -81,6 +81,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8001:80"
+  engine:
+    build: 
+      context: ./game-engine
+      dockerfile: Dockerfile
+    container_name: engine
+    depends_on:
+      - rabbitmq
+    expose:
+      - 8081
+    environment:
+      - RABBIT_URL=amqp://guest:guest@rabbitmq:5672
 volumes:
   cache:
     driver: local
