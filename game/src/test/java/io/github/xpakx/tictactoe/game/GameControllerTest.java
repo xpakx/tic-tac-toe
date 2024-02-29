@@ -2,6 +2,7 @@ package io.github.xpakx.tictactoe.game;
 
 import com.redis.testcontainers.RedisContainer;
 import io.github.xpakx.tictactoe.clients.event.GameEvent;
+import io.github.xpakx.tictactoe.clients.event.MoveEvent;
 import io.github.xpakx.tictactoe.game.dto.*;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -112,6 +113,22 @@ class GameControllerTest {
                 null
         );
         rabbitAdmin.declareBinding(binding);
+
+        var queue2 = new Queue("test.move.queue", true);
+        rabbitAdmin.declareQueue(queue2);
+        var exchange2 = ExchangeBuilder
+                .topicExchange("tictactoe.moves.topic")
+                .durable(true)
+                .build();
+        rabbitAdmin.declareExchange(exchange2);
+        Binding binding2 = new Binding(
+                "test.move.queue",
+                Binding.DestinationType.QUEUE,
+                "tictactoe.moves.topic",
+                "move",
+                null
+        );
+        rabbitAdmin.declareBinding(binding2);
         rabbitSetupIsDone = true;
     }
 
@@ -134,6 +151,7 @@ class GameControllerTest {
     void tearDown() {
         rabbitAdmin.purgeQueue("tictactoe.state.queue");
         rabbitAdmin.purgeQueue("test.queue");
+        rabbitAdmin.purgeQueue("test.move.queue");
         gameRepository.deleteAll();
     }
 
@@ -523,6 +541,47 @@ class GameControllerTest {
         assertThat(moveMessage.getPlayer(), equalTo("user2"));
     }
 
+    @Test
+    void shouldSendMoveEventToRabbitMq() throws Exception {
+        var game = new GameState();
+        game.setUsername1("user1");
+        game.setUsername2("user2");
+        game.setFirstUserStarts(true);
+        game.setId(5L);
+        game.setCurrentState("?????????");
+        game.setCurrentSymbol(GameSymbol.X);
+        gameRepository.save(game);
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("user1"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+
+        var move = new MoveRequest();
+        move.setX(0);
+        move.setY(0);
+        session.send("/app/move/5", move);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(isQueueNotEmpty("test.move.queue"), Matchers.is(true));
+        var msg = getMoveMessage();
+        assert(msg.isPresent());
+        var event = msg.get();
+        assertThat(event.getGameId(), equalTo(5L));
+        assertThat(event.getRow(), equalTo(0));
+        assertThat(event.getColumn(), equalTo(0));
+        assertThat(event.getGameState(), equalTo("?????????"));
+        assertThat(event.getCurrentSymbol(), equalTo(("X")));
+    }
+
     private class ChatFrameHandler implements StompFrameHandler {
         private final CountDownLatch latch;
 
@@ -621,5 +680,17 @@ class GameControllerTest {
             latch.countDown();
         }
 
+    }
+
+
+    private Optional<MoveEvent> getMoveMessage() {
+        var queuedMessage = rabbitTemplate.receiveAndConvert("test.move.queue");
+        if (Objects.isNull(queuedMessage)) {
+            return Optional.empty();
+        }
+        if (queuedMessage instanceof MoveEvent e) {
+            return Optional.of(e);
+        }
+        return Optional.empty();
     }
 }
