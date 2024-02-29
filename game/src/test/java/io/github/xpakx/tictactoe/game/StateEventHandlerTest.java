@@ -1,10 +1,16 @@
 package io.github.xpakx.tictactoe.game;
 
 import com.redis.testcontainers.RedisContainer;
+import io.github.xpakx.tictactoe.clients.event.MoveEvent;
+import io.github.xpakx.tictactoe.game.dto.EngineEvent;
 import io.github.xpakx.tictactoe.game.dto.StateEvent;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +22,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -58,8 +67,31 @@ class StateEventHandlerTest {
         registry.add("spring.data.redis.port", redis::getRedisPort);
     }
 
+    private boolean rabbitSetupIsDone = false;
+
+    void config() {
+        var queue = new Queue("test.queue", true);
+        rabbitAdmin.declareQueue(queue);
+        var exchange = ExchangeBuilder
+                .topicExchange("tictactoe.moves.topic")
+                .durable(true)
+                .build();
+        rabbitAdmin.declareExchange(exchange);
+        var binding = new Binding(
+                "test.queue",
+                Binding.DestinationType.QUEUE,
+                "tictactoe.moves.topic",
+                "move",
+                null
+        );
+        rabbitAdmin.declareBinding(binding);
+        rabbitSetupIsDone = true;
+    }
     @BeforeEach
     void setUp() {
+        if (!rabbitSetupIsDone) {
+            config();
+        }
     }
 
     @AfterEach
@@ -101,11 +133,57 @@ class StateEventHandlerTest {
         assertThat(getRedisRecordCount(), equalTo(0L));
     }
 
+    @Test
+    void shouldAskAIForFirstMove() {
+        var event = new StateEvent();
+        event.setId(5L);
+        event.setUsername1("user1");
+        event.setUser2AI(true);
+        event.setFirstUserStarts(false);
+        event.setCurrentState("?????????");
+        event.setCurrentSymbol(GameSymbol.X);
+        rabbitTemplate.convertAndSend("tictactoe.state.topic", "state", event);
+
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(isQueueNotEmpty("test.queue"), Matchers.is(true));
+        var moveOpt = getMoveMessage();
+        assertThat(moveOpt.isPresent(), is(true));
+        var move = moveOpt.get();
+        assertThat(move.isAi(), is(true));
+        assertThat(move.getGameState(), equalTo("?????????"));
+        assertThat(move.getCurrentSymbol(), equalTo("X"));
+    }
+
     private Long getRedisRecordCount() {
         return gameRepository.count();
     }
 
     private Callable<Boolean> redisHasRecord() {
         return () -> getRedisRecordCount() > 0;
+    }
+
+    private int getMessageCount(String queueName) {
+        Properties queueProperties = rabbitAdmin.getQueueProperties(queueName);
+        if (queueProperties != null) {
+            return (int) queueProperties.get("QUEUE_MESSAGE_COUNT");
+        } else {
+            return 0;
+        }
+    }
+
+    private Callable<Boolean> isQueueNotEmpty(String queueName) {
+        return () -> getMessageCount(queueName) > 0;
+    }
+
+    private Optional<MoveEvent> getMoveMessage() {
+        var queuedMessage = rabbitTemplate.receiveAndConvert("test.queue");
+        if (Objects.isNull(queuedMessage)) {
+            return Optional.empty();
+        }
+        if (queuedMessage instanceof MoveEvent e) {
+            return Optional.of(e);
+        }
+        return Optional.empty();
     }
 }
