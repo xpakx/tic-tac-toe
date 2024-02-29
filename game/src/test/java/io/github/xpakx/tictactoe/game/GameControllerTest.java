@@ -476,6 +476,53 @@ class GameControllerTest {
         assertThat(moveMessage.getMessage(), containsStringIgnoringCase("cannot move"));
     }
 
+    @Test
+    void shouldSendMovesFromEngineToUsers() throws Exception {
+        StompHeaders stompHeaders = new StompHeaders();
+        stompHeaders.add("Token", generateToken("user1"));
+        StompSession session = stompClient
+                .connectAsync(
+                        baseUrl + "/play/websocket" ,
+                        new WebSocketHttpHeaders(),
+                        stompHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(1, SECONDS);
+        await()
+                .atMost(1, SECONDS)
+                .until(session::isConnected);
+        var latch = new CountDownLatch(1);
+        session.subscribe("/topic/game/5", new MoveFrameHandler(latch));
+        Thread.sleep(100);
+        var game = new GameState();
+        game.setUsername1("user1");
+        game.setUsername2("user2");
+        game.setFirstUserStarts(false);
+        game.setId(5L);
+        game.setCurrentState("?????????");
+        game.setCurrentSymbol(GameSymbol.X);
+        gameRepository.save(game);
+
+        var event = new EngineEvent();
+        event.setGameId(5L);
+        event.setLegal(true);
+        event.setColumn(0);
+        event.setRow(0);
+        event.setNewState("X????????");
+        event.setMove("X????????");
+        rabbitTemplate.convertAndSend("tictactoe.engine.topic", "engine", event);
+        await()
+                .atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertEquals(0, latch.getCount()));
+        MoveMessage moveMessage = completableMove.get(1, SECONDS);
+        assertThat(moveMessage, notNullValue());
+        assertThat(moveMessage.isApplied(), is(true));
+        assertThat(moveMessage.isLegal(), is(true));
+        assertThat(moveMessage.getX(), equalTo(0));
+        assertThat(moveMessage.getY(), equalTo(0));
+        assertThat(moveMessage.getPlayer(), equalTo("user2"));
+    }
+
     private class ChatFrameHandler implements StompFrameHandler {
         private final CountDownLatch latch;
 
