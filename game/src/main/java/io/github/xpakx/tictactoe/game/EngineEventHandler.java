@@ -12,7 +12,7 @@ public class EngineEventHandler {
     private final GameService service;
 
     @RabbitListener(queues = "${amqp.queue.engine}")
-    void handleExpedition(final EngineEvent event) {
+    void handleEngineEvent(final EngineEvent event) {
         try {
             service.doMakeMove(event);
         } catch (final Exception e) {
