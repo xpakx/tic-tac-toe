@@ -74,13 +74,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-
 	var Red    = "\033[31m"
 
 	s := "Where to move?\n\n"
+	s += BoardToString(m.board, m.cursorX, m.cursorY, m.current);
+	s += "\n\n"
 
-	for i, row := range m.board {
+	s += Red + "\nPress q to quit.\n" + Reset
+
+	return s
+}
+
+
+func BoardToString(board [][]string, cursorX int, cursorY int, current string) string {
+	var Reset  = "\033[0m"
+	var Blue   = "\033[34m"
+	var Red    = "\033[31m"
+
+	s := "";
+	for i, row := range board {
 		for j := range row {
 			if i == 0 && j == 0 {
 				s += "╭─"
@@ -103,7 +115,7 @@ func (m model) View() string {
 		}
 		s += "\n"
 		for j, field := range row {
-			selected := m.cursorX == i && m.cursorY == j
+			selected := cursorX == i && cursorY == j
 
 			cursor := "│ " + field + " "
 			color := Blue
@@ -111,7 +123,7 @@ func (m model) View() string {
 				color = Red
 			}
 			if selected {
-				cursor = "│ " + color + m.current + " " + Reset
+				cursor = "│ " + color + current + " " + Reset
 			}
 
 			if j == len(row)-1 {
@@ -121,7 +133,7 @@ func (m model) View() string {
 		}
 		s += "\n"
 	}
-	for j := range m.board[0] {
+	for j := range board[0] {
 		if j == 0 {
 			s += "╰───"
 		} else {
@@ -129,11 +141,7 @@ func (m model) View() string {
 		}
 	}
 	s += "╯"
-	s += "\n\n"
-
-	s += Red + "\nPress q to quit.\n" + Reset
-
-	return s
+	return s;
 }
 
 func main() {
