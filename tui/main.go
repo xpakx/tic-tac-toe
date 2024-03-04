@@ -84,49 +84,58 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	var Reset  = "\033[0m"
 	var Red    = "\033[31m"
-	var Blue   = "\033[34m"
 
 	s:= ""
 	
 	if m.token == "" {
-		s += "Please log in.\n\n"
-		s += Blue + "Login:    " + Reset
-		if m.cursorX == 0 {
-			s += Red
-		}
-		s += m.login + strings.Repeat("_", 20 - len(m.login)) + "\n"
-		if m.cursorX == 0 {
-			s += Reset
-		}
-		
-
-		s += Blue + "Password: " + Reset
-		if m.cursorX == 1 {
-			s += Red
-		}
-		s += strings.Repeat("*", len(m.password)) + strings.Repeat("_", 20 - len(m.password)) + "\n"
-		if m.cursorX == 1 {
-			s += Reset
-		}
-
-		s +=  "\n\nDon't have an account? " 
-		if m.cursorX == 2 {
-			s += Red
-		} else {
-			s += Blue
-		}
-		s += "Register."
-		s += Reset
+		s += GetLoginForm(m.cursorX, m.login, m.password, false)
 
 	} else {
 
 		s += "Where to move?\n\n"
-		s += BoardToString(m.board, m.cursorX, m.cursorY, m.current);
+		s += BoardToString(m.board, m.cursorX, m.cursorY, m.current)
 	}
 
 	s += "\n\n"
 	s += Red + "\nPress q to quit.\n" + Reset
 
+	return s
+}
+
+func GetLoginForm(cursor int, username string, password string, insertMode bool) string {
+	var Reset  = "\033[0m"
+	var Blue   = "\033[34m"
+	var Red    = "\033[31m"
+
+	s := ""
+	s += "Please log in.\n\n"
+	s += Blue + "Login:    " + Reset
+	if cursor == 0 {
+		s += Red
+	}
+	s += username + strings.Repeat("_", 20 - len(username)) + "\n"
+	if cursor == 0 {
+		s += Reset
+	}
+
+
+	s += Blue + "Password: " + Reset
+	if cursor == 1 {
+		s += Red
+	}
+	s += strings.Repeat("*", len(password)) + strings.Repeat("_", 20 - len(password)) + "\n"
+	if cursor == 1 {
+		s += Reset
+	}
+
+	s +=  "\n\nDon't have an account? " 
+	if cursor == 2 {
+		s += Red
+	} else {
+		s += Blue
+	}
+	s += "Register."
+	s += Reset
 	return s
 }
 
