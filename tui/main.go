@@ -63,24 +63,69 @@ func logIn(username string, password string) tea.Cmd {
 		    return errMsg{err}
 	    }
 
-	    data := authResponse{}
 	    if res.StatusCode == 200 {
-		    json.Unmarshal([]byte(body), &data)
+		    data := authResponse{}
+		    err := json.Unmarshal([]byte(string(body)), &data)
+		    if err != nil {
+			    return errMsg{err}
+		    }
+		    return data
 	    }
 
-	    return authMsg{res.StatusCode, data}
+	    data := serverErr{}
+	    json.Unmarshal([]byte(body), &data)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return data
     }
 }
 
-type authMsg struct {
-	status int
-	body authResponse
+func register(username string, password string, passwordRe string) tea.Cmd {
+    return func() tea.Msg {
+	    c := &http.Client{Timeout: 10 * time.Second}
+	    jsonBody := []byte(`{"username": "` + username + `", "password": "` + password +`", "passwordRe": "` + passwordRe + `"}`)
+	    bodyReader := bytes.NewReader(jsonBody)
+	    res, err := c.Post(apiUrl + "/register", "application/json", bodyReader)
+
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    defer res.Body.Close()
+	    body, err := io.ReadAll(res.Body)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+
+	    if res.StatusCode == 201 {
+		    data := authResponse{}
+		    json.Unmarshal([]byte(body), &data)
+		    if err != nil {
+			    return errMsg{err}
+		    }
+		    return data
+	    }
+	    data := serverErr{}
+	    json.Unmarshal([]byte(body), &data)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return data
+    }
 }
 
+type serverErr struct {
+	Error int `json:"error"`
+	Message string `json:"message"`
+	Status string `json:"status"`
+	Errors []string `json:"errors"`
+}
+
+
 type authResponse struct {
-	token string
-	username string
-	moderator_role bool
+	Token string `json:"token"`
+	Username string `json:"username"`
+	ModeratorRole bool `json:"moderator_role"`
 }
 
 type errMsg struct{ err error }
@@ -110,6 +155,22 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
+func (m model) ToRegister() model {
+	m.cursorX = 0
+	m.cursorY = 0
+	m.inputs = []input{{"Login", "", 20, false}, {"Password", "", 20, false}, {"Repeat", "", 20, false}}
+	m.view = "register"
+	return m
+}
+
+func (m model) ToLogin() model {
+	m.cursorX = 0
+	m.cursorY = 0
+	m.inputs = []input{{"Login", "", 20, false}, {"Password", "", 20, false}}
+	m.view = "login"
+	return m
+}
+
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -136,6 +197,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursorX++
 			} else if m.view == "login" && m.cursorX < 3 {
 				m.cursorX++
+			} else if m.view == "register" && m.cursorX < 4 {
+				m.cursorX++
 			}
 		case "left", "h":
 			if m.view == "game" && m.cursorY > 0 {
@@ -155,12 +218,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
 				m.inputs[m.cursorX].focused = true
 			} else if m.view == "login" && m.cursorX == 2 {
-				// login
-				fmt.Print("log")
 				return m, logIn(m.inputs[0].value, m.inputs[1].value)
 			} else if m.view == "login" && m.cursorX == 3 {
-				// to register
-				fmt.Print("to reg")
+				m = m.ToRegister();
+			} else if m.view == "register" && (m.cursorX == 0 || m.cursorX == 1 || m.cursorX == 2)  {
+				m.inputs[m.cursorX].focused = true
+			} else if m.view == "register" && m.cursorX == 3 {
+				return m, register(m.inputs[0].value, m.inputs[1].value, m.inputs[2].value)
+			} else if m.view == "register" && m.cursorX == 4 {
+				m = m.ToLogin();
 			}
 			case "r": 
 			if m.view == "game" {
@@ -170,14 +236,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "i":
 			if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
 				m.inputs[m.cursorX].focused = true
+			} else if m.view == "register" && (m.cursorX == 0 || m.cursorX == 1 || m.cursorX == 2)  {
+				m.inputs[m.cursorX].focused = true
 			}
 
 		}
-	case authMsg:
-		fmt.Print(msg.status)
-		fmt.Print(msg.body.token)
-		fmt.Print(msg.body.username)
-		fmt.Print(msg.body.moderator_role)
+	case authResponse:
+		fmt.Print(msg.Token)
+		fmt.Print(msg.Username)
+		fmt.Print(msg.ModeratorRole)
+	case serverErr:
+		fmt.Print(msg.Status)
+		fmt.Print(msg.Error)
+		fmt.Print(msg.Message)
+		fmt.Print(msg.Errors)
 	}
 	return m, nil
 }
@@ -189,7 +261,11 @@ func (m model) View() string {
 	s:= ""
 
 	if m.token == "" {
-		s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
+		if m.view == "login" {
+			s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
+		} else if m.view == "register" {
+			s += GetRegisterForm(m.cursorX, m.inputs[0], m.inputs[1], m.inputs[2], false)
+		}
 
 	} else {
 
@@ -245,6 +321,62 @@ func GetLoginForm(cursor int, username input, password input, insertMode bool) s
 		s += Blue
 	}
 	s += "Register."
+	s += Reset
+	return s
+}
+
+func GetRegisterForm(cursor int, username input, password input, passwordRe input, insertMode bool) string {
+	var Reset  = "\033[0m"
+	var Blue   = "\033[34m"
+	var Red    = "\033[31m"
+
+	s := ""
+	s += Reset + "Please register.\n\n"
+	s += Blue + "Login:    " + Reset
+	if cursor == 0 {
+		s += Red
+	}
+	s += username.value + strings.Repeat("_", username.maxLen - len(username.value)) + "\n"
+	if cursor == 0 {
+		s += Reset
+	}
+
+
+	s += Blue + "Password: " + Reset
+	if cursor == 1 {
+		s += Red
+	}
+	s += strings.Repeat("*", len(password.value)) + strings.Repeat("_", password.maxLen - len(password.value)) + "\n"
+	if cursor == 1 {
+		s += Reset
+	}
+
+
+	s += Blue + "Repeat:   " + Reset
+	if cursor == 2 {
+		s += Red
+	}
+	s += strings.Repeat("*", len(passwordRe.value)) + strings.Repeat("_", passwordRe.maxLen - len(passwordRe.value)) + "\n"
+	if cursor == 2 {
+		s += Reset
+	}
+
+	s +=  "\n" + strings.Repeat(" ", 30 - len("[Register]"))
+	if cursor == 3 {
+		s += Red
+	} else {
+		s += Blue
+	}
+	s += "[Register]\n"
+	s += Reset
+
+	s +=  "\n\n" + Reset + "Already have an account? " 
+	if cursor == 4 {
+		s += Red
+	} else {
+		s += Blue
+	}
+	s += "Log in."
 	s += Reset
 	return s
 }
