@@ -1,19 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+const apiUrl = "http://localhost:8000"
 
 type model struct {
 	board [][]string
 	cursorX int
 	cursorY int
 	current string
-	// TODO: current view: list/login/register
 	view string
 	token string
 
@@ -40,6 +45,31 @@ func (i input) Update(msg tea.KeyMsg) (input, tea.Cmd) {
 	}
 	return i, nil
 }
+
+func logIn(username string, password string) tea.Cmd {
+    return func() tea.Msg {
+	    c := &http.Client{Timeout: 10 * time.Second}
+	    jsonBody := []byte(`{"username": "` + username + `", "password": "` + password +`"}`)
+	    bodyReader := bytes.NewReader(jsonBody)
+	    res, err := c.Post(apiUrl + "/authenticate", "application/json", bodyReader)
+
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return statusMsg{res.StatusCode, res.Body}
+    }
+}
+
+type statusMsg struct {
+	status int
+	body io.ReadCloser
+}
+
+type errMsg struct{ err error }
+
+// For messages that contain errors it's often handy to also implement the
+// error interface on the message.
+func (e errMsg) Error() string { return e.err.Error() }
 
 func initialModel() model {
 	return model{
@@ -108,6 +138,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
 				m.inputs[m.cursorX].focused = true
+			} else if m.view == "login" && m.cursorX == 2 {
+				// login
+				fmt.Print("log")
+				return m, logIn(m.inputs[0].value, m.inputs[1].value)
+			} else if m.view == "login" && m.cursorX == 3 {
+				// to register
+				fmt.Print("to reg")
 			}
 			case "r": 
 			if m.view == "game" {
@@ -120,6 +157,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		}
+	case statusMsg:
+		fmt.Print(msg.status)
+		fmt.Print(msg.body)
 	}
 	return m, nil
 }
@@ -151,7 +191,7 @@ func GetLoginForm(cursor int, username input, password input, insertMode bool) s
 	var Red    = "\033[31m"
 
 	s := ""
-	s += "Please log in.\n\n"
+	s += Reset + "Please log in.\n\n"
 	s += Blue + "Login:    " + Reset
 	if cursor == 0 {
 		s += Red
@@ -171,8 +211,17 @@ func GetLoginForm(cursor int, username input, password input, insertMode bool) s
 		s += Reset
 	}
 
-	s +=  "\n\nDon't have an account? " 
+	s +=  "\n" + strings.Repeat(" ", 30 - len("[Log in]"))
 	if cursor == 2 {
+		s += Red
+	} else {
+		s += Blue
+	}
+	s += "[Log in]\n"
+	s += Reset
+
+	s +=  "\n\n" + Reset + "Don't have an account? " 
+	if cursor == 3 {
 		s += Red
 	} else {
 		s += Blue
