@@ -168,8 +168,51 @@ func sendRequest(username string, token string) tea.Cmd {
     }
 }
 
+func createAIGame(token string) tea.Cmd {
+    return func() tea.Msg {
+	    c := &http.Client{Timeout: 10 * time.Second}
+	    jsonBody := []byte(`{"type": "AI"}`)
+	    bodyReader := bytes.NewReader(jsonBody)
+	    req, err := http.NewRequest(http.MethodPost, apiUrl + "/game", bodyReader)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    req.Header.Add("Content-Type", "application/json")
+	    req.Header.Add("Authorization", "Bearer " + token)
+	    res, err := c.Do(req)
+
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    defer res.Body.Close()
+	    body, err := io.ReadAll(res.Body)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+
+	    if res.StatusCode == 201 {
+		    data := gameResponse{}
+		    json.Unmarshal([]byte(body), &data)
+		    if err != nil {
+			    return errMsg{err}
+		    }
+		    return aiGame{Id: data.Id}
+	    }
+	    data := serverErr{}
+	    json.Unmarshal([]byte(body), &data)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return data
+    }
+}
+
 type gameResponse struct {
 	Id int `json:"id"`
+}
+
+type aiGame struct {
+	Id int
 }
 
 type errMsg struct{ err error }
@@ -219,6 +262,14 @@ func (m model) ToMenu() model {
 	m.cursorX = 0
 	m.cursorY = 0
 	m.view = "menu"
+	return m
+}
+
+func (m model) ToGame(id int) model {
+	m.cursorX = 0
+	m.cursorY = 0
+	m.view = "game"
+	// TODO
 	return m
 }
 
@@ -294,7 +345,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.cursorX == 0 {
 					m = m.ToRequestForm()
 				} else if m.cursorX == 1 { 
-					// ai game
+					return m, createAIGame(m.token)
 				} else if m.cursorX == 2 { 
 					// requests
 				} else if m.cursorX == 3 { 
@@ -329,6 +380,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case gameResponse:
 		fmt.Println(msg.Id)
 		m = m.ToMenu()
+	case aiGame:
+		fmt.Println(msg.Id)
+		m = m.ToGame(msg.Id)
 	case serverErr:
 		m.error = msg.Message
 	}
