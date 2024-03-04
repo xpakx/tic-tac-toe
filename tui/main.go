@@ -45,13 +45,17 @@ func (i input) Update(msg tea.KeyMsg) (input, tea.Cmd) {
 		}
 	} else if key == "ctrl+c" {
 		return i, tea.Quit
+	} else if key == "backspace" {
+		if len(i.value) > 0 {
+			i.value = i.value[:len(i.value)-1]
+		}
 	}
 	return i, nil
 }
 
 func logIn(username string, password string) tea.Cmd {
-    return func() tea.Msg {
-	    c := &http.Client{Timeout: 10 * time.Second}
+	return func() tea.Msg {
+		c := &http.Client{Timeout: 10 * time.Second}
 	    jsonBody := []byte(`{"username": "` + username + `", "password": "` + password +`"}`)
 	    bodyReader := bytes.NewReader(jsonBody)
 	    res, err := c.Post(apiUrl + "/authenticate", "application/json", bodyReader)
