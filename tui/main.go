@@ -22,6 +22,8 @@ type model struct {
 	current string
 	view string
 	token string
+	username string
+	error string
 
 	inputs []input
 }
@@ -171,6 +173,13 @@ func (m model) ToLogin() model {
 	return m
 }
 
+func (m model) ToMenu() model {
+	m.cursorX = 0
+	m.cursorY = 0
+	m.view = "menu"
+	return m
+}
+
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -198,6 +207,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.view == "login" && m.cursorX < 3 {
 				m.cursorX++
 			} else if m.view == "register" && m.cursorX < 4 {
+				m.cursorX++
+			} else if m.view == "menu" && m.cursorX < 4 {
 				m.cursorX++
 			}
 		case "left", "h":
@@ -242,14 +253,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	case authResponse:
-		fmt.Print(msg.Token)
-		fmt.Print(msg.Username)
-		fmt.Print(msg.ModeratorRole)
+		m.token = msg.Token
+		m.username = msg.Username
+		m = m.ToMenu()
 	case serverErr:
-		fmt.Print(msg.Status)
-		fmt.Print(msg.Error)
-		fmt.Print(msg.Message)
-		fmt.Print(msg.Errors)
+		m.error = msg.Message
 	}
 	return m, nil
 }
@@ -260,13 +268,18 @@ func (m model) View() string {
 
 	s:= ""
 
-	if m.token == "" {
-		if m.view == "login" {
-			s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
-		} else if m.view == "register" {
-			s += GetRegisterForm(m.cursorX, m.inputs[0], m.inputs[1], m.inputs[2], false)
-		}
+	if len(m.error) > 0 {
+		s += Red + "Error: " + m.error + Reset
+		s += "\n"
+	}
 
+	if m.view == "login" {
+		s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
+	} else if m.view == "register" {
+		s += GetRegisterForm(m.cursorX, m.inputs[0], m.inputs[1], m.inputs[2], false)
+
+	} else if m.view == "menu" {
+		s += GetMenu(m.cursorX)
 	} else {
 
 		s += "Where to move?\n\n"
@@ -378,6 +391,28 @@ func GetRegisterForm(cursor int, username input, password input, passwordRe inpu
 	}
 	s += "Log in."
 	s += Reset
+	return s
+}
+
+
+func GetMenu(cursor int) string {
+	var Reset  = "\033[0m"
+	var Red    = "\033[31m"
+	options := []string{"New Game", "vs. AI", "Requests", "Active games", "Archive"}
+	s := ""
+	for i, option := range options {
+		if i == 2 {
+			s += "\n"
+		}
+		if cursor == i {
+			s += Red
+		}
+		s += option
+		if cursor == i {
+			s += Reset
+		}
+		s += "\n"
+	}
 	return s
 }
 
