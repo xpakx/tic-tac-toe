@@ -19,6 +19,7 @@ type model struct {
 
 	login string
 	password string
+	insertMode bool
 }
 
 func initialModel() model {
@@ -29,10 +30,11 @@ func initialModel() model {
 			{" ", " ", " "},
 		},
 		current: "✘",
-		view: "game",
+		view: "login",
 		token: "",
 		login: "",
 		password: "",
+		insertMode: false,
 	}
 }
 
@@ -46,39 +48,71 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-	    switch msg.String() {
-	    case "ctrl+c", "q":
-		    return m, tea.Quit
-	    case "up", "k":
-		    if m.cursorX > 0 {
-			    m.cursorX--
-		    }
-	    case "down", "j":
-		    if m.cursorX < len(m.board)-1 {
-			    m.cursorX++
-		    }
-	    case "left", "h":
-		    if m.cursorY > 0 {
-			    m.cursorY--
-		    }
-	    case "right", "l":
-		    if m.cursorY < len(m.board[0])-1 {
-			    m.cursorY++
-		    }
-	    case "enter", " ":
-		    m.board[m.cursorX][m.cursorY] = m.current;
-		    switch m.current {
-			    case "✘": m.current = "○"
-			    case "○": m.current = "✘"
-		    }
-	    case "r": 
-		    m.current =  "✘"
-		    m.board = initialModel().board;
-	    }
-    }
-    return m, nil
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if m.insertMode {
+			key := msg.String()
+			if len(key) == 1 {
+				if m.view == "login" && m.cursorX == 0 && len(m.login) < 20 {
+					m.login += key;
+				} else if m.view == "login" && m.cursorX == 1 && len(m.password) < 20 {
+					m.password += key;
+				}
+
+			} else {
+				switch msg.String() {
+				case "ctrl+c":
+					return m, tea.Quit
+				case "esc", "enter":
+					m.insertMode = false
+				}
+			}
+		} else {
+			switch msg.String() {
+			case "ctrl+c", "q":
+				return m, tea.Quit
+			case "up", "k":
+				if m.cursorX > 0 {
+					m.cursorX--
+				}
+			case "down", "j":
+				if m.view == "game" && m.cursorX < len(m.board)-1 {
+					m.cursorX++
+				} else if m.view == "login" && m.cursorX < 3 {
+					m.cursorX++
+				}
+			case "left", "h":
+				if m.view == "game" && m.cursorY > 0 {
+					m.cursorY--
+				}
+			case "right", "l":
+				if m.view == "game" && m.cursorY < len(m.board[0])-1 {
+					m.cursorY++
+				}
+			case "enter", " ":
+				if m.view == "game" {
+					m.board[m.cursorX][m.cursorY] = m.current;
+					switch m.current {
+						case "✘": m.current = "○"
+						case "○": m.current = "✘"
+					}
+				} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
+					m.insertMode = true
+				}
+				case "r": 
+				if m.view == "game" {
+					m.current =  "✘"
+					m.board = initialModel().board;
+				}
+			case "i":
+				if m.view == "login" && !m.insertMode && (m.cursorX == 0 || m.cursorX == 1)  {
+					m.insertMode = true
+				}
+
+			}
+		}
+	}
+	return m, nil
 }
 
 func (m model) View() string {
@@ -86,7 +120,7 @@ func (m model) View() string {
 	var Red    = "\033[31m"
 
 	s:= ""
-	
+
 	if m.token == "" {
 		s += GetLoginForm(m.cursorX, m.login, m.password, false)
 
