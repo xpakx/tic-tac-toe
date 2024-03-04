@@ -1,8 +1,10 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"os"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -13,6 +15,10 @@ type model struct {
 	current string
 	// TODO: current view: list/login/register
 	view string
+	token string
+
+	login string
+	password string
 }
 
 func initialModel() model {
@@ -24,6 +30,9 @@ func initialModel() model {
 		},
 		current: "✘",
 		view: "game",
+		token: "",
+		login: "",
+		password: "",
 	}
 }
 
@@ -75,11 +84,47 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	var Reset  = "\033[0m"
 	var Red    = "\033[31m"
+	var Blue   = "\033[34m"
 
-	s := "Where to move?\n\n"
-	s += BoardToString(m.board, m.cursorX, m.cursorY, m.current);
+	s:= ""
+	
+	if m.token == "" {
+		s += "Please log in.\n\n"
+		s += Blue + "Login:    " + Reset
+		if m.cursorX == 0 {
+			s += Red
+		}
+		s += m.login + strings.Repeat("_", 20 - len(m.login)) + "\n"
+		if m.cursorX == 0 {
+			s += Reset
+		}
+		
+
+		s += Blue + "Password: " + Reset
+		if m.cursorX == 1 {
+			s += Red
+		}
+		s += strings.Repeat("*", len(m.password)) + strings.Repeat("_", 20 - len(m.password)) + "\n"
+		if m.cursorX == 1 {
+			s += Reset
+		}
+
+		s +=  "\n\nDon't have an account? " 
+		if m.cursorX == 2 {
+			s += Red
+		} else {
+			s += Blue
+		}
+		s += "Register."
+		s += Reset
+
+	} else {
+
+		s += "Where to move?\n\n"
+		s += BoardToString(m.board, m.cursorX, m.cursorY, m.current);
+	}
+
 	s += "\n\n"
-
 	s += Red + "\nPress q to quit.\n" + Reset
 
 	return s
