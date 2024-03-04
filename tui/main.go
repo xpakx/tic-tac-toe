@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -56,19 +57,34 @@ func logIn(username string, password string) tea.Cmd {
 	    if err != nil {
 		    return errMsg{err}
 	    }
-	    return statusMsg{res.StatusCode, res.Body}
+	    defer res.Body.Close()
+	    body, err := io.ReadAll(res.Body)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+
+	    data := authResponse{}
+	    if res.StatusCode == 200 {
+		    json.Unmarshal([]byte(body), &data)
+	    }
+
+	    return authMsg{res.StatusCode, data}
     }
 }
 
-type statusMsg struct {
+type authMsg struct {
 	status int
-	body io.ReadCloser
+	body authResponse
+}
+
+type authResponse struct {
+	token string
+	username string
+	moderator_role bool
 }
 
 type errMsg struct{ err error }
 
-// For messages that contain errors it's often handy to also implement the
-// error interface on the message.
 func (e errMsg) Error() string { return e.err.Error() }
 
 func initialModel() model {
@@ -157,9 +173,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		}
-	case statusMsg:
+	case authMsg:
 		fmt.Print(msg.status)
-		fmt.Print(msg.body)
+		fmt.Print(msg.body.token)
+		fmt.Print(msg.body.username)
+		fmt.Print(msg.body.moderator_role)
 	}
 	return m, nil
 }
