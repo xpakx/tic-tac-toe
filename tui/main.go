@@ -123,11 +123,53 @@ type serverErr struct {
 	Errors []string `json:"errors"`
 }
 
-
 type authResponse struct {
 	Token string `json:"token"`
 	Username string `json:"username"`
 	ModeratorRole bool `json:"moderator_role"`
+}
+
+func sendRequest(username string, token string) tea.Cmd {
+    return func() tea.Msg {
+	    c := &http.Client{Timeout: 10 * time.Second}
+	    jsonBody := []byte(`{"opponent": "` + username + `", "type": "USER"}`)
+	    bodyReader := bytes.NewReader(jsonBody)
+	    req, err := http.NewRequest(http.MethodPost, apiUrl + "/game", bodyReader)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    req.Header.Add("Content-Type", "application/json")
+	    req.Header.Add("Authorization", "Bearer " + token)
+	    res, err := c.Do(req)
+
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    defer res.Body.Close()
+	    body, err := io.ReadAll(res.Body)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+
+	    if res.StatusCode == 201 {
+		    data := gameResponse{}
+		    json.Unmarshal([]byte(body), &data)
+		    if err != nil {
+			    return errMsg{err}
+		    }
+		    return data
+	    }
+	    data := serverErr{}
+	    json.Unmarshal([]byte(body), &data)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return data
+    }
+}
+
+type gameResponse struct {
+	Id int `json:"id"`
 }
 
 type errMsg struct{ err error }
@@ -180,6 +222,14 @@ func (m model) ToMenu() model {
 	return m
 }
 
+func (m model) ToRequestForm() model {
+	m.cursorX = 0
+	m.cursorY = 0
+	m.inputs = []input{{"Username", "", 20, false}}
+	m.view = "request"
+	return m
+}
+
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -210,6 +260,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursorX++
 			} else if m.view == "menu" && m.cursorX < 4 {
 				m.cursorX++
+			} else if m.view == "request" && m.cursorX < 1 {
+				m.cursorX++
 			}
 		case "left", "h":
 			if m.view == "game" && m.cursorY > 0 {
@@ -238,6 +290,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, register(m.inputs[0].value, m.inputs[1].value, m.inputs[2].value)
 			} else if m.view == "register" && m.cursorX == 4 {
 				m = m.ToLogin();
+			} else if m.view == "menu" {
+				if m.cursorX == 0 {
+					m = m.ToRequestForm()
+				} else if m.cursorX == 1 { 
+					// ai game
+				} else if m.cursorX == 2 { 
+					// requests
+				} else if m.cursorX == 3 { 
+					// active
+				} else if m.cursorX == 4 { 
+					// archive
+				}
+			} else if m.view == "request" && m.cursorX == 0 {
+				m.inputs[m.cursorX].focused = true
+			} else if m.view == "request" && m.cursorX == 1 {
+				return m, sendRequest(m.inputs[0].value, m.token)
 			}
 			case "r": 
 			if m.view == "game" {
@@ -249,12 +317,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inputs[m.cursorX].focused = true
 			} else if m.view == "register" && (m.cursorX == 0 || m.cursorX == 1 || m.cursorX == 2)  {
 				m.inputs[m.cursorX].focused = true
+			} else if m.view == "request" && m.cursorX == 0 {
+				m.inputs[m.cursorX].focused = true
 			}
 
 		}
 	case authResponse:
 		m.token = msg.Token
 		m.username = msg.Username
+		m = m.ToMenu()
+	case gameResponse:
+		fmt.Println(msg.Id)
 		m = m.ToMenu()
 	case serverErr:
 		m.error = msg.Message
@@ -280,6 +353,8 @@ func (m model) View() string {
 
 	} else if m.view == "menu" {
 		s += GetMenu(m.cursorX)
+	} else if m.view == "request" {
+		s += GetRequestForm(m.cursorX, m.inputs[0], false)
 	} else {
 
 		s += "Where to move?\n\n"
@@ -413,6 +488,35 @@ func GetMenu(cursor int) string {
 		}
 		s += "\n"
 	}
+	return s
+}
+
+func GetRequestForm(cursor int, username input, insertMode bool) string {
+	var Reset  = "\033[0m"
+	var Blue   = "\033[34m"
+	var Red    = "\033[31m"
+
+	s := ""
+	s += Reset + "Enter username of the opponent.\n\n"
+	s += Blue + "Username:  " + Reset
+	if cursor == 0 {
+		s += Red
+	}
+	s += username.value + strings.Repeat("_", username.maxLen - len(username.value)) + "\n"
+	if cursor == 0 {
+		s += Reset
+	}
+
+
+	s +=  "\n" + strings.Repeat(" ", 30 - len("[Send]"))
+	if cursor == 1 {
+		s += Red
+	} else {
+		s += Blue
+	}
+	s += "[Send]\n"
+	s += Reset
+
 	return s
 }
 
