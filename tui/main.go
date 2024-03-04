@@ -17,9 +17,28 @@ type model struct {
 	view string
 	token string
 
-	login string
-	password string
-	insertMode bool
+	inputs []input
+}
+
+type input struct {
+	title string
+	value string
+	maxLen int
+	focused bool
+}
+
+func (i input) Update(msg tea.KeyMsg) (input, tea.Cmd) {
+	key := msg.String()
+	if key == "esc" || key == "enter" {
+		i.focused = false
+	} else if len(key) == 1 {
+		if len(i.value) < i.maxLen {
+			i.value += key;
+		}
+	} else if key == "ctrl+c" {
+		return i, tea.Quit
+	}
+	return i, nil
 }
 
 func initialModel() model {
@@ -32,9 +51,7 @@ func initialModel() model {
 		current: "✘",
 		view: "login",
 		token: "",
-		login: "",
-		password: "",
-		insertMode: false,
+		inputs: []input{{"Login", "", 20, false}, {"Password", "", 20, false}},
 	}
 }
 
@@ -47,69 +64,61 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.insertMode {
-			key := msg.String()
-			if len(key) == 1 {
-				if m.view == "login" && m.cursorX == 0 && len(m.login) < 20 {
-					m.login += key;
-				} else if m.view == "login" && m.cursorX == 1 && len(m.password) < 20 {
-					m.password += key;
-				}
-
-			} else {
-				switch msg.String() {
-				case "ctrl+c":
-					return m, tea.Quit
-				case "esc", "enter":
-					m.insertMode = false
-				}
+		for i, field := range m.inputs {
+			if field.focused {
+				newField, command := field.Update(msg)
+				m.inputs[i] = newField
+				return m, command
 			}
-		} else {
-			switch msg.String() {
-			case "ctrl+c", "q":
-				return m, tea.Quit
-			case "up", "k":
-				if m.cursorX > 0 {
-					m.cursorX--
-				}
-			case "down", "j":
-				if m.view == "game" && m.cursorX < len(m.board)-1 {
-					m.cursorX++
-				} else if m.view == "login" && m.cursorX < 3 {
-					m.cursorX++
-				}
-			case "left", "h":
-				if m.view == "game" && m.cursorY > 0 {
-					m.cursorY--
-				}
-			case "right", "l":
-				if m.view == "game" && m.cursorY < len(m.board[0])-1 {
-					m.cursorY++
-				}
-			case "enter", " ":
-				if m.view == "game" {
-					m.board[m.cursorX][m.cursorY] = m.current;
-					switch m.current {
-						case "✘": m.current = "○"
-						case "○": m.current = "✘"
-					}
-				} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
-					m.insertMode = true
-				}
-				case "r": 
-				if m.view == "game" {
-					m.current =  "✘"
-					m.board = initialModel().board;
-				}
-			case "i":
-				if m.view == "login" && !m.insertMode && (m.cursorX == 0 || m.cursorX == 1)  {
-					m.insertMode = true
-				}
-
+		}
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "up", "k":
+			if m.cursorX > 0 {
+				m.cursorX--
 			}
+		case "down", "j":
+			if m.view == "game" && m.cursorX < len(m.board)-1 {
+				m.cursorX++
+			} else if m.view == "login" && m.cursorX < 3 {
+				m.cursorX++
+			}
+		case "left", "h":
+			if m.view == "game" && m.cursorY > 0 {
+				m.cursorY--
+			}
+		case "right", "l":
+			if m.view == "game" && m.cursorY < len(m.board[0])-1 {
+				m.cursorY++
+			}
+		case "enter", " ":
+			if m.view == "game" {
+				m.board[m.cursorX][m.cursorY] = m.current;
+				switch m.current {
+					case "✘": m.current = "○"
+					case "○": m.current = "✘"
+				}
+			} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
+				m.inputs[m.cursorX].focused = true
+			}
+			case "r": 
+			if m.view == "game" {
+				m.current =  "✘"
+				m.board = initialModel().board;
+			}
+		case "i":
+			if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
+				m.inputs[m.cursorX].focused = true
+			}
+
 		}
 	}
 	return m, nil
@@ -122,7 +131,7 @@ func (m model) View() string {
 	s:= ""
 
 	if m.token == "" {
-		s += GetLoginForm(m.cursorX, m.login, m.password, false)
+		s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
 
 	} else {
 
@@ -136,7 +145,7 @@ func (m model) View() string {
 	return s
 }
 
-func GetLoginForm(cursor int, username string, password string, insertMode bool) string {
+func GetLoginForm(cursor int, username input, password input, insertMode bool) string {
 	var Reset  = "\033[0m"
 	var Blue   = "\033[34m"
 	var Red    = "\033[31m"
@@ -147,7 +156,7 @@ func GetLoginForm(cursor int, username string, password string, insertMode bool)
 	if cursor == 0 {
 		s += Red
 	}
-	s += username + strings.Repeat("_", 20 - len(username)) + "\n"
+	s += username.value + strings.Repeat("_", username.maxLen - len(username.value)) + "\n"
 	if cursor == 0 {
 		s += Reset
 	}
@@ -157,7 +166,7 @@ func GetLoginForm(cursor int, username string, password string, insertMode bool)
 	if cursor == 1 {
 		s += Red
 	}
-	s += strings.Repeat("*", len(password)) + strings.Repeat("_", 20 - len(password)) + "\n"
+	s += strings.Repeat("*", len(password.value)) + strings.Repeat("_", password.maxLen - len(password.value)) + "\n"
 	if cursor == 1 {
 		s += Reset
 	}
