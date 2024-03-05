@@ -209,13 +209,12 @@ func getGames(endpoint string, token string) tea.Cmd {
 		    return errMsg{err}
 	    }
 
-	    if res.StatusCode == 201 {
+	    if res.StatusCode == 200 {
 		    var data []gameSummary
 		    json.Unmarshal([]byte(body), &data)
 		    if err != nil {
 			    return errMsg{err}
 		    }
-	    fmt.Print(data)
 		    requestType := "games" 
 		    if endpoint == "/archive" {
 			    requestType = "archive" 
