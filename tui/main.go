@@ -26,6 +26,7 @@ type model struct {
 	error string
 
 	inputs []input
+	games []gameSummary
 }
 
 type input struct {
@@ -350,6 +351,13 @@ func (m model) ToRequestForm() model {
 	return m
 }
 
+func (m model) ToGameList(listType string) model {
+	m.cursorX = 0
+	m.cursorY = 0
+	m.view = listType
+	return m
+}
+
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -381,6 +389,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.view == "menu" && m.cursorX < 4 {
 				m.cursorX++
 			} else if m.view == "request" && m.cursorX < 1 {
+				m.cursorX++
+			} else if (m.view == "games" || m.view == "archive" || m.view == "requests") && m.cursorX < len(m.games)-1 {
 				m.cursorX++
 			}
 		case "left", "h":
@@ -453,8 +463,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		fmt.Println(msg.Id)
 		m = m.ToGame(msg.Id)
 	case gameList:
-		fmt.Print(msg.Games)
-		fmt.Print(msg.Type)
+		m.games = msg.Games
+		m = m.ToGameList(msg.Type)
 	case serverErr:
 		m.error = msg.Message
 	}
@@ -481,6 +491,8 @@ func (m model) View() string {
 		s += GetMenu(m.cursorX)
 	} else if m.view == "request" {
 		s += GetRequestForm(m.cursorX, m.inputs[0], false)
+	} else if m.view == "games" || m.view == "archive" || m.view == "requests" {
+		s += GetGameList(m.cursorX, m.games, m.view)
 	} else {
 
 		s += "Where to move?\n\n"
@@ -645,6 +657,65 @@ func GetRequestForm(cursor int, username input, insertMode bool) string {
 
 	return s
 }
+
+func GetGameList(cursor int, games []gameSummary, listType string) string {
+	var Reset  = "\033[0m"
+	var Blue   = "\033[34m"
+	var Red    = "\033[31m"
+
+	s := ""
+
+	if len(games) == 0 || cursor >= len(games) {
+		return "[No games]"
+	}
+
+	game := games[cursor]
+
+	if cursor > 0 {
+		s += "↟"
+	} else {
+		s += " "
+	}
+
+	s += "   Game " +  fmt.Sprintf("%d", game.Id) + "   " 
+
+	s += "\n"
+	if cursor < len(games)-1 {
+		s += "↡"
+	} else {
+		s += " "
+	}
+	s += "   " + Blue + game.Username1 + Reset + " vs. " + Red + game.Username2 + Reset
+
+	s += "\n\n"
+	board := game.State
+	for i := range board {
+		for j := range board[i] {
+			if board[i][j] == "X" {
+				board[i][j] = "✘"
+			} else if board[i][j] == "O" {
+				board[i][j] = "○"
+			} else {
+				board[i][j] = " "
+			}
+		}
+	}
+	s += BoardToString(game.State, -1, -1, "")
+
+	buttons := "[Go]"
+
+	s +=  "\n" + strings.Repeat(" ", 30 - len(buttons))
+	if cursor == 1 {
+		s += Red
+	} else {
+		s += Blue
+	}
+	s += buttons + "\n"
+	s += Reset
+
+	return s
+}
+
 
 
 func BoardToString(board [][]string, cursorX int, cursorY int, current string) string {
