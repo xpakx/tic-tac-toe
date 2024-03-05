@@ -172,6 +172,72 @@ func sendRequest(username string, token string) tea.Cmd {
     }
 }
 
+type gameSummary struct {
+    Id int `json:"id"`
+    State [][]string `json:"currentState"`
+    LastMoveRow int `json:"lastMoveRow"`
+    LastMoveColumn int `json:"lastMoveColumn"`
+    Type string `json:"Type"`
+
+    Finished bool `json:"finished"`
+    Won bool `json:"won"`
+    Lost bool `json:"lost"`
+    Drawn bool `json:"drawn"`
+
+    Username1 string `json:"username1"`
+    Username2 string `json:"username2"`
+    UserStarts bool `json:"userStarts"`
+    CurrentSymbol string `json:"currentSymbol"`
+}
+
+func getGames(endpoint string, token string) tea.Cmd {
+    return func() tea.Msg {
+	    c := &http.Client{Timeout: 10 * time.Second}
+	    req, err := http.NewRequest(http.MethodGet, apiUrl + "/game" + endpoint, nil)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    req.Header.Add("Authorization", "Bearer " + token)
+	    res, err := c.Do(req)
+
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    defer res.Body.Close()
+	    body, err := io.ReadAll(res.Body)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+
+	    if res.StatusCode == 201 {
+		    var data []gameSummary
+		    json.Unmarshal([]byte(body), &data)
+		    if err != nil {
+			    return errMsg{err}
+		    }
+	    fmt.Print(data)
+		    requestType := "games" 
+		    if endpoint == "/archive" {
+			    requestType = "archive" 
+		    } else if endpoint == "/request" {
+			    requestType = "requests" 
+		    }
+		    return gameList{Games: data, Type: requestType}
+	    }
+	    data := serverErr{}
+	    json.Unmarshal([]byte(body), &data)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return data
+    }
+}
+
+type gameList struct {
+	Games []gameSummary
+	Type string
+}
+
 func createAIGame(token string) tea.Cmd {
     return func() tea.Msg {
 	    c := &http.Client{Timeout: 10 * time.Second}
@@ -351,11 +417,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else if m.cursorX == 1 { 
 					return m, createAIGame(m.token)
 				} else if m.cursorX == 2 { 
-					// requests
+					return m, getGames("/request", m.token)
 				} else if m.cursorX == 3 { 
-					// active
+					return m, getGames("", m.token)
 				} else if m.cursorX == 4 { 
-					// archive
+					return m, getGames("/archive", m.token)
 				}
 			} else if m.view == "request" && m.cursorX == 0 {
 				m.inputs[m.cursorX].focused = true
@@ -387,6 +453,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case aiGame:
 		fmt.Println(msg.Id)
 		m = m.ToGame(msg.Id)
+	case gameList:
+		fmt.Print(msg.Games)
+		fmt.Print(msg.Type)
 	case serverErr:
 		m.error = msg.Message
 	}
