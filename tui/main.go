@@ -289,6 +289,50 @@ type errMsg struct{ err error }
 
 func (e errMsg) Error() string { return e.err.Error() }
 
+func acceptRequest(gameId int, accept bool, token string) tea.Cmd {
+    return func() tea.Msg {
+	    c := &http.Client{Timeout: 10 * time.Second}
+	    acceptString := "false"
+	    if accept {
+		    acceptString = "true"
+	    }
+	    jsonBody := []byte(`{"accepted": "` + acceptString + `"}`)
+	    bodyReader := bytes.NewReader(jsonBody)
+	    req, err := http.NewRequest(http.MethodPost, apiUrl + "/game/" + fmt.Sprint(gameId) + "/request", bodyReader)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    req.Header.Add("Content-Type", "application/json")
+	    req.Header.Add("Authorization", "Bearer " + token)
+	    res, err := c.Do(req)
+
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    defer res.Body.Close()
+	    body, err := io.ReadAll(res.Body)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+
+	    if res.StatusCode == 200 {
+		    var data bool;
+		    json.Unmarshal([]byte(body), &data)
+		    if err != nil {
+			    return errMsg{err}
+		    }
+		    fmt.Println(data)
+		    return data
+	    }
+	    data := serverErr{}
+	    json.Unmarshal([]byte(body), &data)
+	    if err != nil {
+		    return errMsg{err}
+	    }
+	    return data
+    }
+}
+
 func initialModel() model {
 	return model{
 		board:  [][]string{
@@ -443,6 +487,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.view == "requests" {
 				if m.cursorY == 0 {
 					m = m.ToMenu()
+				} else if m.cursorY == 1 {
+					return m, acceptRequest(m.games[m.cursorX].Id, true, m.token)
+				} else if m.cursorY == 2 {
+					return m, acceptRequest(m.games[m.cursorX].Id, false, m.token)
 				}
 			} else if m.view == "games" {
 				if m.cursorY == 0 {
