@@ -75,22 +75,20 @@ func (m model) View() string {
 		s += Red + "Error: " + m.error + Reset
 		s += "\n"
 	}
-
-	if m.view == "login" {
-		s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
-	} else if m.view == "register" {
-		s += GetRegisterForm(m.cursorX, m.inputs[0], m.inputs[1], m.inputs[2], false)
-
-	} else if m.view == "menu" {
-		s += GetMenu(m.cursorX)
-	} else if m.view == "request" {
-		s += GetRequestForm(m.cursorX, m.inputs[0], false)
-	} else if m.view == "games" || m.view == "archive" || m.view == "requests" {
-		s += GetGameList(m.cursorX, m.cursorY, m.games, m.view)
-	} else {
-
-		s += "Where to move?\n\n"
-		s += BoardToString(m.board, m.cursorX, m.cursorY, m.current)
+	switch m.view {
+		case "login": 
+			s += GetLoginForm(m.cursorX, m.inputs[0], m.inputs[1], false)
+		case "register":
+			s += GetRegisterForm(m.cursorX, m.inputs[0], m.inputs[1], m.inputs[2], false)
+		case "menu":
+			s += GetMenu(m.cursorX)
+		case "request":
+			s += GetRequestForm(m.cursorX, m.inputs[0], false)
+		case "games", "archive", "requests":
+			s += GetGameList(m.cursorX, m.cursorY, m.games, m.view)
+		default:
+			s += "Where to move?\n\n"
+			s += BoardToString(m.board, m.cursorX, m.cursorY, m.current)
 	}
 
 	s += "\n\n"
