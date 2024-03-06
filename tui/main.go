@@ -8,6 +8,9 @@ import (
 )
 
 const apiUrl = "http://localhost:8000"
+const Reset  = "\033[0m"
+const Red    = "\033[31m"
+const Blue   = "\033[34m"
 
 type serverErr struct {
 	Error int `json:"error"`

@@ -69,9 +69,6 @@ func (m model) ToGameList(listType string) model {
 }
 
 func (m model) View() string {
-	var Reset  = "\033[0m"
-	var Red    = "\033[31m"
-
 	s:= ""
 
 	if len(m.error) > 0 {

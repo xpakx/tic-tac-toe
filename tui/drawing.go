@@ -6,10 +6,6 @@ import (
 )
 
 func GetLoginForm(cursor int, username input, password input, insertMode bool) string {
-	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-	var Red    = "\033[31m"
-
 	s := ""
 	s += Reset + "Please log in.\n\n"
 	s += Blue + "Login:    " + Reset
@@ -52,10 +48,6 @@ func GetLoginForm(cursor int, username input, password input, insertMode bool) s
 }
 
 func GetRegisterForm(cursor int, username input, password input, passwordRe input, insertMode bool) string {
-	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-	var Red    = "\033[31m"
-
 	s := ""
 	s += Reset + "Please register.\n\n"
 	s += Blue + "Login:    " + Reset
@@ -109,8 +101,6 @@ func GetRegisterForm(cursor int, username input, password input, passwordRe inpu
 
 
 func GetMenu(cursor int) string {
-	var Reset  = "\033[0m"
-	var Red    = "\033[31m"
 	options := []string{"New Game", "vs. AI", "Requests", "Active games", "Archive"}
 	s := ""
 	for i, option := range options {
@@ -130,10 +120,6 @@ func GetMenu(cursor int) string {
 }
 
 func GetRequestForm(cursor int, username input, insertMode bool) string {
-	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-	var Red    = "\033[31m"
-
 	s := ""
 	s += Reset + "Enter username of the opponent.\n\n"
 	s += Blue + "Username:  " + Reset
@@ -159,10 +145,6 @@ func GetRequestForm(cursor int, username input, insertMode bool) string {
 }
 
 func GetGameList(cursorX int, cursorY int, games []gameSummary, listType string) string {
-	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-	var Red    = "\033[31m"
-
 	s := ""
 
 	if len(games) == 0 || cursorX >= len(games) {
@@ -243,13 +225,7 @@ func GetGameList(cursorX int, cursorY int, games []gameSummary, listType string)
 	return s
 }
 
-
-
 func BoardToString(board [][]string, cursorX int, cursorY int, current string) string {
-	var Reset  = "\033[0m"
-	var Blue   = "\033[34m"
-	var Red    = "\033[31m"
-
 	s := "";
 	for i, row := range board {
 		for j := range row {
@@ -302,5 +278,3 @@ func BoardToString(board [][]string, cursorX int, cursorY int, current string) s
 	s += "╯"
 	return s;
 }
-
-
