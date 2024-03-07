@@ -18,10 +18,15 @@ const unset = -1
 type websocket_service struct {
 	game_id int
 	program *tea.Program
+	Connection *websocket.Conn
 }
 
 func (m *websocket_service) SetGameId(game_id int) {
 	m.game_id = game_id
+}
+
+func (m *websocket_service) SetProgram(program *tea.Program) {
+	m.program = program
 }
 
 func (m websocket_service) Run() {
