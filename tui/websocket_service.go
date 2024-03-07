@@ -29,7 +29,8 @@ func (m *websocket_service) SetProgram(program *tea.Program) {
 	m.program = program
 }
 
-func (m websocket_service) Run() {
+
+func (ws *websocket_service) ConnectWS() {
 	pattern := `^http`
 	regex := regexp.MustCompile(pattern)
 	url := regex.ReplaceAllString(apiUrl, "ws")
@@ -39,8 +40,21 @@ func (m websocket_service) Run() {
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
-	defer c.Close()
+	// defer c.Close() // TODO
 
+	ws.Connection = c
+}
+
+func (ws *websocket_service) Connect(token string) {
+	connectMessage := ""
+	err := ws.Connection.WriteMessage(websocket.TextMessage, []byte(connectMessage))
+	if err != nil {
+		log.Fatal("write:", err)
+	}
+}
+
+
+func (ws *websocket_service) Subscribe() {
 	topics := []string{"topic/game", "topic/board", "app/board", "topic/chat"}
 	for _, topic := range topics {
 		subscribeMessage := []byte(`{"action": "subscribe", "topic": "` + topic + fmt.Sprint(m.game_id) + `"}`)
@@ -50,8 +64,9 @@ func (m websocket_service) Run() {
 			return
 		}
 	}
+}
 
-
+func (ws *websocket_service) Run() {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -61,12 +76,12 @@ func (m websocket_service) Run() {
 				fmt.Println("end")
 				return
 			default:
-				_, message, err := c.ReadMessage()
+				_, message, err := ws.Connection.ReadMessage()
 				if err != nil {
 					log.Println("read:", err)
 					return
 				}
-				m.handleMessage(message)
+				ws.handleMessage(string(message))
 			}
 		}
 	}()
@@ -79,7 +94,7 @@ func (m websocket_service) Run() {
 		log.Println("interrupt")
 	}
 
-	err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	err := ws.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	if err != nil {
 		log.Println("write close:", err)
 		return

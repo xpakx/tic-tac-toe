@@ -13,7 +13,7 @@ type model struct {
 	token string
 	username string
 	error string
-	websocket websocket_service
+	websocket *websocket_service
 
 	inputs []input
 	games []gameSummary
@@ -111,7 +111,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.ToMenu()
 	case aiGame:
 		m.websocket.SetGameId(msg.Id)
+		m.websocket.ConnectWS()
 		go m.websocket.Run()
+		m.websocket.Connect(m.token)
+		m.websocket.Subscribe()
 		m = m.ToGame(msg.Id)
 	case gameList:
 		m.games = msg.Games
@@ -175,6 +178,7 @@ func (m model) KeyEvent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				case "✘": m.current = "○"
 				case "○": m.current = "✘"
 			}
+			m.websocket.SendChat("test")
 		} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
 			m.inputs[m.cursorX].focused = true
 		} else if m.view == "login" && m.cursorX == 2 {
@@ -214,6 +218,13 @@ func (m model) KeyEvent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		} else if m.view == "games" {
 			if m.cursorY == 0 {
 				m = m.ToMenu()
+			} else if m.cursorY == 1 {
+				m.websocket.SetGameId(m.games[m.cursorX].Id)
+				m.websocket.ConnectWS()
+				go m.websocket.Run()
+				m.websocket.Connect(m.token)
+				m.websocket.Subscribe()
+				m = m.ToGame(m.games[m.cursorX].Id)
 			}
 		} else if m.view == "archive" {
 			m = m.ToMenu()
