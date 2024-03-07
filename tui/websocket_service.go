@@ -45,7 +45,7 @@ func (ws *websocket_service) ConnectWS() {
 }
 
 func (ws *websocket_service) Connect(token string) {
-	connectMessage := ""
+	connectMessage := fmt.Sprintf("CONNECT\nToken:%s\naccept-version:%s\nheart-beat:%s\n\n\000", token, "1.2,1.1,1.0", "20000,0")
 	err := ws.Connection.WriteMessage(websocket.TextMessage, []byte(connectMessage))
 	if err != nil {
 		log.Fatal("write:", err)
