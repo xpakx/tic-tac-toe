@@ -2,8 +2,15 @@ package main
 
 import (
 	"time"
+	"regexp"
+	"log"
+	"os"
+	"os/signal"
+	"encoding/json"
+	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	websocket "github.com/gorilla/websocket"
 )
 
 const unset = -1
@@ -18,16 +25,72 @@ func (m *websocket_service) SetGameId(game_id int) {
 }
 
 func (m websocket_service) Run() {
-	go func() {
-		for {
-			pause := time.Duration(1) * time.Second
-			time.Sleep(pause)
+	pattern := `^http`
+	regex := regexp.MustCompile(pattern)
+	url := regex.ReplaceAllString(apiUrl, "ws")
+	url = url + "/play/websocket"
 
-			m.program.Send(socketMsg{id: m.game_id})
+	c, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
+	defer c.Close()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			select {
+			case <-done:
+				fmt.Println("end")
+				return
+			default:
+				_, message, err := c.ReadMessage()
+				if err != nil {
+					log.Println("read:", err)
+					return
+				}
+				m.handleMessage(message)
+			}
 		}
 	}()
+
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	select {
+	case <-interrupt:
+		log.Println("interrupt")
+	}
+
+	err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		log.Println("write close:", err)
+		return
+	}
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+	}
+
 }
 
 type socketMsg struct {
-	id int
+	msg string
+}
+
+func (m websocket_service) handleMessage(rawMessage []byte) {
+    var message Message
+    if err := json.Unmarshal(rawMessage, &message); err != nil {
+        log.Println("error decoding message:", err)
+        return
+    }
+    m.program.Send(socketMsg{
+	    msg: fmt.Sprintf("received message from topic '%s': %s", message.Topic, message.Content),
+    })
+}
+
+type Message struct {
+    Topic   string `json:"topic"`
+    Content string `json:"content"`
 }

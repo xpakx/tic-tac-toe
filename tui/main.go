@@ -42,7 +42,6 @@ func main() {
 	w := websocket_service{game_id: unset}
 	p := tea.NewProgram(initialModel(w))
 	w.program = p
-	w.Run()
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("error: %v", err)
 		os.Exit(1)

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -112,6 +110,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// fmt.Println(msg.Id)
 		m = m.ToMenu()
 	case aiGame:
+		m.websocket.SetGameId(msg.Id)
+		go m.websocket.Run()
 		m = m.ToGame(msg.Id)
 	case gameList:
 		m.games = msg.Games
@@ -119,7 +119,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case serverErr:
 		m.error = msg.Message
 	case socketMsg:
-		m.error = "Test: game id " + fmt.Sprint(msg.id)
+		m.error = "Test: " + msg.msg
 	}
 	return m, nil
 }
