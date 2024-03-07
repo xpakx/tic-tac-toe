@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"regexp"
 	"time"
+	"strings"
+	"encoding/json"
 
 	tea "github.com/charmbracelet/bubbletea"
 	websocket "github.com/gorilla/websocket"
@@ -131,8 +133,61 @@ type socketMsg struct {
 }
 
 func (m websocket_service) handleMessage(rawMessage string) {
-    log.Println(rawMessage)
-    m.program.Send(socketMsg{
-	    msg: fmt.Sprintf("received message: %s", string(rawMessage)),
-    })
+    destination, err := extractDestination(rawMessage);
+    body, err2 := extractBody(rawMessage);
+    if err == nil && err2 == nil {
+	    switch destination {
+	    case "game":
+		    var data MoveMsg
+		    if err := json.Unmarshal([]byte(body), &data); err == nil {
+			    m.program.Send(data)
+		    } else {
+			    m.program.Send(socketMsg{
+				    msg: fmt.Sprintf("error: %s", string(rawMessage)),
+			    })
+		    }
+	    case "board":
+		    // TODO
+	    case "chat":
+		    // TODO
+	    }
+    }
+}
+
+func extractDestination(message string) (string, error) {
+    pattern := `destination:/topic/(.*)/`
+    re := regexp.MustCompile(pattern)
+    matches := re.FindStringSubmatch(message)
+    if len(matches) < 2 {
+        return "", fmt.Errorf("destination not found in message")
+    }
+    return matches[1], nil
+}
+
+func extractBody(message string) (string, error) {
+    start := strings.Index(message, "\n\n")
+    if start == -1 {
+        return "", fmt.Errorf("start of body not found in message")
+    }
+    start += 2 
+
+    end := strings.Index(message, "\000")
+    if end == -1 {
+        return "", fmt.Errorf("end of body not found in message")
+    }
+
+    return message[start:end], nil
+}
+
+type MoveMsg struct {
+    Player        string `json:"player"`
+    X             int    `json:"x"`
+    Y             int    `json:"y"`
+    Legal         bool   `json:"legal"`
+    Applied       bool   `json:"applied"`
+    CurrentSymbol string `json:"currentSymbol"`
+    Finished      bool   `json:"finished"`
+    Drawn         bool   `json:"drawn"`
+    Won           bool   `json:"won"`
+    Winner        string `json:"winner"`
 }

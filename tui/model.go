@@ -123,6 +123,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.error = msg.Message
 	case socketMsg:
 		m.error = "Test: " + msg.msg
+	case MoveMsg:
+		if msg.Legal && msg.Applied {
+			switch msg.CurrentSymbol {
+				case "O": m.current = "○"
+				case "X": m.current = "✘"
+			}
+			m.board[msg.X][msg.Y] = m.current;
+			switch m.current {
+				case "✘": m.current = "○"
+				case "○": m.current = "✘"
+			}
+		}
+
 	}
 	return m, nil
 }
@@ -175,8 +188,8 @@ func (m model) KeyEvent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.view == "game" {
 			// m.board[m.cursorX][m.cursorY] = m.current;
 			// switch m.current {
-				// case "✘": m.current = "○"
-				// case "○": m.current = "✘"
+			// case "✘": m.current = "○"
+			// case "○": m.current = "✘"
 			// }
 			m.websocket.SendMove(m.cursorX, m.cursorY)
 		} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
