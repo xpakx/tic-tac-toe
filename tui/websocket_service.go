@@ -1,13 +1,12 @@
 package main
 
 import (
-	"time"
-	"regexp"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"encoding/json"
-	"fmt"
+	"regexp"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	websocket "github.com/gorilla/websocket"
@@ -110,18 +109,9 @@ type socketMsg struct {
 	msg string
 }
 
-func (m websocket_service) handleMessage(rawMessage []byte) {
-    var message Message
-    if err := json.Unmarshal(rawMessage, &message); err != nil {
-        log.Println("error decoding message:", err)
-        return
-    }
+func (m websocket_service) handleMessage(rawMessage string) {
+    log.Println(rawMessage)
     m.program.Send(socketMsg{
-	    msg: fmt.Sprintf("received message from topic '%s': %s", message.Topic, message.Content),
+	    msg: fmt.Sprintf("received message: %s", string(rawMessage)),
     })
-}
-
-type Message struct {
-    Topic   string `json:"topic"`
-    Content string `json:"content"`
 }
