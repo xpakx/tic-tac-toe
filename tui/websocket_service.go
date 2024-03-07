@@ -28,6 +28,16 @@ func (m *websocket_service) SetProgram(program *tea.Program) {
 	m.program = program
 }
 
+func (ws websocket_service) SendChat(msg string) {
+	body := "{\"message\": \"" + msg + "\"}"
+	msg_length := len(body)
+	path := fmt.Sprintf("/app/chat/%d", ws.game_id)
+	chatMessage := fmt.Sprintf("SEND\ndestination:%s\ncontent-length:%d\n\n%s\000", path, msg_length, body)
+	err := ws.Connection.WriteMessage(websocket.TextMessage, []byte(chatMessage))
+	if err != nil {
+		log.Println("chat:", err)
+	}
+}
 
 func (ws *websocket_service) ConnectWS() {
 	pattern := `^http`
