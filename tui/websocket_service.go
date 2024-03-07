@@ -39,6 +39,17 @@ func (ws websocket_service) SendChat(msg string) {
 	}
 }
 
+func (ws websocket_service) SendMove(x, y int) {
+	body := fmt.Sprintf(`{"x": %d, "y": %d}`, x, y)
+	msg_length := len(body)
+	path := fmt.Sprintf("/app/move/%d", ws.game_id)
+	chatMessage := fmt.Sprintf("SEND\ndestination:%s\ncontent-length:%d\n\n%s\000", path, msg_length, body)
+	err := ws.Connection.WriteMessage(websocket.TextMessage, []byte(chatMessage))
+	if err != nil {
+		log.Println("move:", err)
+	}
+}
+
 func (ws *websocket_service) ConnectWS() {
 	pattern := `^http`
 	regex := regexp.MustCompile(pattern)

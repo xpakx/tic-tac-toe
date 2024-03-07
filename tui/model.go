@@ -173,12 +173,12 @@ func (m model) KeyEvent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case "enter", " ":
 		if m.view == "game" {
-			m.board[m.cursorX][m.cursorY] = m.current;
-			switch m.current {
-				case "✘": m.current = "○"
-				case "○": m.current = "✘"
-			}
-			m.websocket.SendChat("test")
+			// m.board[m.cursorX][m.cursorY] = m.current;
+			// switch m.current {
+				// case "✘": m.current = "○"
+				// case "○": m.current = "✘"
+			// }
+			m.websocket.SendMove(m.cursorX, m.cursorY)
 		} else if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {
 			m.inputs[m.cursorX].focused = true
 		} else if m.view == "login" && m.cursorX == 2 {
