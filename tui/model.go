@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -13,6 +15,7 @@ type model struct {
 	token string
 	username string
 	error string
+	websocket websocket_service
 
 	inputs []input
 	games []gameSummary
@@ -115,6 +118,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.ToGameList(msg.Type)
 	case serverErr:
 		m.error = msg.Message
+	case socketMsg:
+		m.error = "Test: game id " + fmt.Sprint(msg.id)
 	}
 	return m, nil
 }
@@ -216,7 +221,7 @@ func (m model) KeyEvent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "r": 
 		if m.view == "game" {
 			m.current =  "✘"
-			m.board = initialModel().board;
+			m.board = initialModel(m.websocket).board;
 		}
 	case "i":
 		if m.view == "login" && (m.cursorX == 0 || m.cursorX == 1)  {

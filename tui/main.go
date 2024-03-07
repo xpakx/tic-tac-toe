@@ -23,7 +23,7 @@ type errMsg struct{ err error }
 
 func (e errMsg) Error() string { return e.err.Error() }
 
-func initialModel() model {
+func initialModel(websocket websocket_service) model {
 	return model{
 		board:  [][]string{
 			{" ", " ", " "},
@@ -34,11 +34,15 @@ func initialModel() model {
 		view: "login",
 		token: "",
 		inputs: []input{{"Login", "", 20, false}, {"Password", "", 20, false}},
+		websocket: websocket,
 	}
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	w := websocket_service{game_id: unset}
+	p := tea.NewProgram(initialModel(w))
+	w.program = p
+	w.Run()
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("error: %v", err)
 		os.Exit(1)
