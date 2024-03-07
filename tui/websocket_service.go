@@ -36,6 +36,17 @@ func (m websocket_service) Run() {
 	}
 	defer c.Close()
 
+	topics := []string{"topic/game", "topic/board", "app/board", "topic/chat"}
+	for _, topic := range topics {
+		subscribeMessage := []byte(`{"action": "subscribe", "topic": "` + topic + fmt.Sprint(m.game_id) + `"}`)
+		err = c.WriteMessage(websocket.TextMessage, subscribeMessage)
+		if err != nil {
+			log.Println("write:", err)
+			return
+		}
+	}
+
+
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
