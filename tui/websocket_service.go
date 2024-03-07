@@ -54,10 +54,10 @@ func (ws *websocket_service) Connect(token string) {
 
 
 func (ws *websocket_service) Subscribe() {
-	topics := []string{"topic/game", "topic/board", "app/board", "topic/chat"}
+	topics := []string{"/topic/game", "/topic/board", "/app/board", "/topic/chat"}
 	for _, topic := range topics {
-		subscribeMessage := []byte(`{"action": "subscribe", "topic": "` + topic + fmt.Sprint(m.game_id) + `"}`)
-		err = c.WriteMessage(websocket.TextMessage, subscribeMessage)
+		subscribeMessage := fmt.Sprintf("SUBSCRIBE\nid:sub-0\ndestination:%s/%d\n\n\000", topic ,ws.game_id);
+		err := ws.Connection.WriteMessage(websocket.TextMessage, []byte(subscribeMessage))
 		if err != nil {
 			log.Println("write:", err)
 			return
